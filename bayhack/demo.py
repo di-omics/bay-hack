@@ -40,6 +40,7 @@ def real_demo():
         print(f"[execute/verify] skipped — {e}")
 
     from .zeon_bridge import zeon_swap_selfcheck, ZeonBridgeUnavailable
+    from .mcp_agent import run_over_mcp, McpUnavailable
     for label, fn in [
         ("design+learn (labworld GP + ParEGO + split-conformal)",
          lambda: seams.real_world_model_run(n_iter=30, seed=0)),
@@ -48,10 +49,12 @@ def real_demo():
         ("dexterity (plr_lr arm move, sim)", seams.dexterity_checkpoint),
         ("zeon bridge -- swap the arm backend to ZeonArmBackend (same loop, sim)",
          zeon_swap_selfcheck),
+        ("physical MCP -- an agent drives the loop over the plr-mcp server (stdio)",
+         run_over_mcp),
     ]:
         try:
             print(f"\n[{label}]\n  {fn()}")
-        except (seams.SeamUnavailable, ZeonBridgeUnavailable) as e:
+        except (seams.SeamUnavailable, ZeonBridgeUnavailable, McpUnavailable) as e:
             print(f"\n[{label}]\n  skipped — {e}")
 
 
