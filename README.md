@@ -31,6 +31,19 @@ dashboard shows it visually: proposed wells coloring by fluorescence, the
 Rhodamine R&sup2; gate green, the convergence curve climbing, and the conformal
 gate landing on ACCEPT.
 
+## The numbers
+
+![bay-hack convergence](docs/convergence.svg)
+
+```bash
+python -m bayhack.benchmark
+```
+
+Across 30 seeds the world model recovers the planted optimum in **~6 runs**
+(100% convergence, avg |x&minus;x*| = 0.005) versus a **~26-run** grid sweep &mdash;
+a **4.3&times;** speedup. With the real `ml-bio-eval` gate installed, the
+split-conformal QC gate holds **~0.90 empirical coverage** (target 1&minus;&alpha; = 0.90).
+
 ## Run it for real — against the @di-omics stack, still no hardware
 
 ```bash
