@@ -21,11 +21,15 @@ See **[STRATEGY.md](STRATEGY.md)** for the full winning plan, demo script, and
 ## Run the loop now (pure simulation, stdlib only)
 
 ```bash
-python -m bayhack.demo
+python -m bayhack.demo        # narrated CLI run
+python -m bayhack.dashboard   # live browser dashboard -> http://127.0.0.1:8000
 ```
 
 You'll watch the world model recover a planted optimum in ~6 runs vs ~26 for a
-grid sweep, with the Rhodamine gate and conformal gate gating each round.
+grid sweep, with the Rhodamine gate and conformal gate gating each round. The
+dashboard shows it visually: proposed wells coloring by fluorescence, the
+Rhodamine R&sup2; gate green, the convergence curve climbing, and the conformal
+gate landing on ACCEPT.
 
 ## Run it for real — against the @di-omics stack, still no hardware
 
