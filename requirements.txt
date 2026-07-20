@@ -1,0 +1,14 @@
+# The pure-sim demo (`python -m bayhack.demo`) needs ONLY the standard library.
+#
+# To swap the seams for the real @di-omics stack, install your repos (editable,
+# from sibling checkouts) plus their deps:
+#
+#   pip install -e ../plr-mcp            # plr_mcp  (pulls mcp + pylabrobot)
+#   pip install -e ../plr-lab-robot      # plr_lr   (pulls pylabrobot + numpy)
+#   pip install -e ../plr-epigenome      # tipseq_plr (sow, validation/rhodamine)
+#   # ml-bio-eval components install per-folder (see that repo's README):
+#   #   lab-world-model (sklearn/scipy), autonomous-protein-design, plm-design-loop
+#
+# Optional demo niceties:
+# matplotlib>=3.8     # convergence plot
+# pytest>=8.0         # tests
