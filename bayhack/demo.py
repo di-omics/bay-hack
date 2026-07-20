@@ -8,10 +8,59 @@ and it recovers a planted optimum in far fewer runs than a grid sweep.
 """
 from __future__ import annotations
 
+import argparse
+
 from .loop import DBTLLoop, Bench
 
 
+def real_demo():
+    """Run the loop against the REAL @di-omics stack (no hardware). Each seam
+    degrades gracefully to a note if its repo is not installed."""
+    from . import seams
+    status = seams.seam_status()
+    print("=" * 68)
+    print("bay-hack — a world model runs the bench   (REAL seams, no hardware)")
+    print("=" * 68)
+    for label, ok in status.items():
+        print(f"  [{'x' if ok else ' '}] {label}")
+    print()
+
+    # BUILD/TEST + VERIFY through the real stack (short loop; chatterbox is loud).
+    try:
+        bench = seams.PlrMcpBench(quiet=True)
+        loop = DBTLLoop(bench, tol=0.03, budget=6,
+                        rhodamine_fn=seams.rhodamine_gate_real,
+                        cv_fn=seams.cv_checkpoint_real)
+        loop.run(verbose=True)
+        bx, _ = loop.wm.best()
+        print(f"\n[execute] plr-mcp chatterbox ran the build+read choreography "
+              f"(real PyLabRobot; reader decoupled in sim, so signal is modeled).")
+        print(f"[verify]  tipseq_plr Rhodamine gate + SimVision gated every round.")
+    except seams.SeamUnavailable as e:
+        print(f"[execute/verify] skipped — {e}")
+
+    for label, fn in [
+        ("design+learn (labworld GP + ParEGO + split-conformal)",
+         lambda: seams.real_world_model_run(n_iter=30, seed=0)),
+        ("plan (tipseq_plr sow: NL -> protocol)",
+         lambda: seams.plan_from_text("cut and tag 8 samples, sequence to 2M reads")),
+        ("dexterity (plr_lr arm move, sim)", seams.dexterity_checkpoint),
+    ]:
+        try:
+            print(f"\n[{label}]\n  {fn()}")
+        except seams.SeamUnavailable as e:
+            print(f"\n[{label}]\n  skipped — {e}")
+
+
 def main():
+    ap = argparse.ArgumentParser(description="bay-hack DBTL demo")
+    ap.add_argument("--real", action="store_true",
+                    help="run against the installed @di-omics stack (no hardware)")
+    args = ap.parse_args()
+    if args.real:
+        real_demo()
+        return
+
     print("=" * 68)
     print("bay-hack — a world model runs the bench   (simulation)")
     print("Design → Build/Test (MCP) → Verify (Rhodamine + CV) → Learn (conformal)")

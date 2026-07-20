@@ -160,11 +160,16 @@ class RoundLog:
 class DBTLLoop:
     """Design-Build-Test-Learn, composed across the repos, with a QC gate."""
 
-    def __init__(self, bench: Bench | None = None, tol: float = 0.03, budget: int = 20):
+    def __init__(self, bench: Bench | None = None, tol: float = 0.03, budget: int = 20,
+                 rhodamine_fn=None, cv_fn=None):
         self.bench = bench or Bench()
         self.wm = WorldModel()
         self.tol = tol
         self.budget = budget
+        # SEAM hooks: default to the stdlib gates; bayhack.seams swaps in the real
+        # tipseq_plr Rhodamine + SimVision gates. Both take the same call shape.
+        self.rhodamine_fn = rhodamine_fn or rhodamine_gate
+        self.cv_fn = cv_fn or cv_checkpoint
         self.history: list[RoundLog] = []
         self.runs_used: int = 0
 
@@ -179,8 +184,8 @@ class DBTLLoop:
             # BUILD / TEST
             fluor = self.bench.run_design(x)
             # VERIFY
-            rhod = rhodamine_gate(self.bench.rhodamine_series())
-            cv = cv_checkpoint(fault=False)
+            rhod = self.rhodamine_fn(self.bench.rhodamine_series())
+            cv = self.cv_fn(fault=False)
             trustworthy = rhod["passed"] and cv["passed"]
             # LEARN — a physically trustworthy measurement always trains the
             # world model; the conformal gate decides promote vs. escalate.
