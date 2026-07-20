@@ -39,16 +39,19 @@ def real_demo():
     except seams.SeamUnavailable as e:
         print(f"[execute/verify] skipped — {e}")
 
+    from .zeon_bridge import zeon_swap_selfcheck, ZeonBridgeUnavailable
     for label, fn in [
         ("design+learn (labworld GP + ParEGO + split-conformal)",
          lambda: seams.real_world_model_run(n_iter=30, seed=0)),
         ("plan (tipseq_plr sow: NL -> protocol)",
          lambda: seams.plan_from_text("cut and tag 8 samples, sequence to 2M reads")),
         ("dexterity (plr_lr arm move, sim)", seams.dexterity_checkpoint),
+        ("zeon bridge -- swap the arm backend to ZeonArmBackend (same loop, sim)",
+         zeon_swap_selfcheck),
     ]:
         try:
             print(f"\n[{label}]\n  {fn()}")
-        except seams.SeamUnavailable as e:
+        except (seams.SeamUnavailable, ZeonBridgeUnavailable) as e:
             print(f"\n[{label}]\n  skipped — {e}")
 
 

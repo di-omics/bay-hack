@@ -56,6 +56,18 @@ def test_dexterity_checkpoint_moves_plate():
     assert r["passed"] and r["commands"] > 0
 
 
+def test_zeon_backend_is_real_scara_and_swap_runs():
+    pytest.importorskip("plr_lr")
+    from bayhack.zeon_bridge import ZeonArmBackend, zeon_swap_selfcheck
+    from plr_lr.arm.sim_backend import SimulationArmBackend
+    assert issubclass(ZeonArmBackend, SimulationArmBackend)   # a real SCARA backend
+    assert ZeonArmBackend.N_JOINTS == 5
+    r = zeon_swap_selfcheck()                                 # the swap actually runs
+    assert r["passed"] and r["commands"] > 0 and r["zeon_calls"] > 0
+    assert r["backend"] == "ZeonArmBackend"
+    assert "pick_up_resource" in r["seams"]                   # SDK seams enumerated
+
+
 def test_real_loop_converges_through_real_seams():
     pytest.importorskip("plr_mcp")
     pytest.importorskip("tipseq_plr")
