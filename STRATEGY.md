@@ -36,9 +36,9 @@ Here's the map from the hack's asks to your repos. This is your unfair advantage
 
 ## 2. The winning play: the Zeon bridge 🔌
 
-**Zeon does *not* use PyLabRobot.** They built a proprietary NL→computer-vision→arm stack (off-the-shelf arms + depth cameras, general-purpose, vision-first). PyLabRobot is the established open ecosystem (liquid handler, Tecan, Opentrons, plate readers) — and *you* bring the validation rigor their stack lacks.
+**Zeon's stack is vision-first, not PyLabRobot-based.** They built an NL→computer-vision→arm platform (off-the-shelf arms + depth cameras, general-purpose). PyLabRobot is the established open ecosystem (liquid handler, Tecan, Opentrons, plate readers) — and *you* bring the validation rigor that makes automation trustworthy for serious labs.
 
-So the move that makes Brontë and Tahir lean forward:
+So the move that turns heads:
 
 > **Write a PyLabRobot backend that targets Zeon's arm** (shape it like `plr_lr`'s `SimulationArmBackend`/`SCARABackend`, or `plr-epigenome`'s `robot_arm.py` `RobotArmBackend`). The moment it works, *the entire PyLabRobot protocol library — plus your DBTL loop, Rhodamine validation, and conformal gate — runs on Zeon's platform.* You'd hand Zeon instant compatibility with the whole open lab-automation world **and** the reliability layer (sim-first verify + fluorescent ladders + conformal QC) they need to be trusted by serious labs.
 
