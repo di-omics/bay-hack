@@ -68,6 +68,16 @@ def test_zeon_backend_is_real_scara_and_swap_runs():
     assert "pick_up_resource" in r["seams"]                   # SDK seams enumerated
 
 
+def test_agent_drives_loop_over_mcp():
+    pytest.importorskip("mcp")
+    pytest.importorskip("plr_mcp")
+    from bayhack.mcp_agent import run_over_mcp
+    r = run_over_mcp()
+    assert r["all_ok"] and r["tools_exposed"] >= 5
+    assert [c[0] for c in r["calls"]] == \
+        ["plr_setup_deck", "plr_transfer", "plr_read_plate"]
+
+
 def test_real_loop_converges_through_real_seams():
     pytest.importorskip("plr_mcp")
     pytest.importorskip("tipseq_plr")

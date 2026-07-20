@@ -67,6 +67,10 @@ actual code — **verified to run with no instrument**:
   (empirical coverage ~0.90 at α=0.10).
 - **Plan** → `tipseq_plr.sow` compiles English → a routed protocol.
 - **Dexterity** → `plr_lr` `Workcell.sim()` moves a plate between taught sites.
+- **Physical MCP** → an agent drives the loop over the real `plr-mcp` **MCP server**
+  (stdio) &mdash; `python -m bayhack.mcp_agent` calls `plr_setup_deck` &rarr;
+  `plr_transfer` &rarr; `plr_read_plate` as Claude would. This is the host's
+  "Physical MCP" thesis, running.
 
 **Honest by design (so it survives judge questions):**
 - PyLabRobot 0.2.1's chatterbox plate reader returns zeros — decoupled from what
