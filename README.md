@@ -1,9 +1,11 @@
 # 🧪🤖 bay-hack
 
+[![ci](https://github.com/di-omics/bay-hack/actions/workflows/ci.yml/badge.svg)](https://github.com/di-omics/bay-hack/actions/workflows/ci.yml)
+
 **A world model runs the bench.** Track-A entry for the 24hr AI for Science
 World Models Hack @ Zeon Systems (Jul 25–26, SF).
 
-**Live site:** https://di-omics.github.io/bay-hack/ &middot; **Pitch slide:** [docs/slide.html](docs/slide.html)
+**Live site:** https://di-omics.github.io/bay-hack/ &middot; **Pitch slide:** [docs/slide.html](docs/slide.html) &middot; **Trust model:** [ACCEPTANCE.md](ACCEPTANCE.md)
 
 ![bay-hack loop demo](docs/demo.gif)
 
