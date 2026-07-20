@@ -1,0 +1,79 @@
+<!-- ══════════════════════════════════════════════════════════════════════
+     bay-hack HOUSE STYLE KIT · di-omics "matcha"
+     Paste blocks 1–3 into your page. CONTRAST RULE (enforced):
+       • TEXT  → var(--ink) or var(--matcha-deep)   (legible on white + projector)
+       • BRIGHT var(--matcha) → GRAPHICS ONLY: icon strokes, borders, arrows,
+         pill outlines/solids, chart lines, the vesica. Never bright matcha as
+         body/label text on white (fails WCAG AA at ~2.75:1).
+     ══════════════════════════════════════════════════════════════════════ -->
+
+<!-- 1) FONTS  (in <head>) — swap for the embedded Manrope woff2 from
+        plr-tested/hamilton-star/bench-app.html for a fully offline file. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;500;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<!-- 2) STYLE -->
+<style>
+:root{
+  --matcha:#5cae5a; --matcha-deep:#3c8446; --ink:#28372a;
+  --bg:#ffffff; --wash:#f2f8f3; --line:#e6efe8; --muted:#6f8274; --dye:#2f6fd6;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:'Manrope',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;}
+.eyebrow{font-weight:800;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--matcha-deep);margin:0;}
+.title{font-weight:800;line-height:1.02;color:var(--ink);letter-spacing:-.02em;margin:0;}
+.title .lite{font-weight:200;color:var(--matcha-deep);letter-spacing:0;}
+.lede{color:var(--muted);font-weight:500;}
+a{color:var(--matcha-deep);text-decoration:none;font-weight:800;}
+a:hover{text-decoration:underline;}
+.charm-row{display:flex;gap:14px;align-items:center;}
+svg.charm{width:30px;height:30px;fill:none;stroke:var(--matcha);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
+.pill{display:inline-flex;align-items:center;gap:.5em;border:1.5px solid var(--matcha);color:var(--matcha-deep);
+  border-radius:999px;padding:.5em 1.15em;font-weight:800;font-size:12px;letter-spacing:.1em;text-transform:uppercase;background:#fff;}
+.pill--solid{background:var(--matcha);color:#fff;border-color:var(--matcha);}
+.card{background:#fff;border:1px solid var(--line);border-left:3px solid var(--matcha);border-radius:12px;padding:18px 20px;}
+.card h3{margin:0 0 6px;font-weight:800;font-size:15px;color:var(--ink);}
+.card p{margin:0;color:var(--muted);font-size:14px;font-weight:500;}
+.term{background:var(--wash);border-left:3px solid var(--matcha);border-radius:10px;padding:14px 16px;
+  font-family:'JetBrains Mono',ui-monospace,monospace;font-size:14px;color:var(--ink);overflow:auto;}
+.term .c{color:var(--matcha-deep);}
+.stat b{font-weight:800;font-size:26px;color:var(--matcha-deep);letter-spacing:-.02em;display:block;}
+.stat span{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:800;}
+.flow{display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+.flow .node{border:1.5px solid var(--matcha);border-radius:10px;padding:9px 12px;font-weight:800;font-size:13px;
+  color:var(--ink);background:#fff;text-align:center;}
+.flow .node.accent{background:var(--matcha);color:#fff;border-color:var(--matcha);}
+.flow .arrow{color:var(--matcha);font-weight:800;font-size:16px;}
+.chip{display:inline-flex;align-items:center;gap:.45em;border:1px solid var(--line);border-radius:999px;
+  padding:.35em .8em;font-size:12px;font-weight:800;color:var(--matcha-deep);background:var(--wash);}
+.chip.dye{color:var(--dye);}
+svg.vesica{width:74px;height:48px;fill:none;stroke:var(--matcha);stroke-width:1.4;}
+hr.rule{border:none;border-top:1px solid var(--line);margin:0;}
+</style>
+
+<!-- 3) LIQUID-HANDLING SVG SPRITE — place once near the top of <body>. -->
+<svg id="lh-sprite" width="0" height="0" style="position:absolute" aria-hidden="true">
+ <symbol id="lh-plate" viewBox="0 0 32 32"><rect x="4" y="7" width="24" height="18" rx="2.5"/>
+  <circle cx="9" cy="12" r="1.3"/><circle cx="14" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/><circle cx="24" cy="12" r="1.3"/>
+  <circle cx="9" cy="16.5" r="1.3"/><circle cx="14" cy="16.5" r="1.3"/><circle cx="19" cy="16.5" r="1.3"/><circle cx="24" cy="16.5" r="1.3"/>
+  <circle cx="9" cy="21" r="1.3"/><circle cx="14" cy="21" r="1.3"/><circle cx="19" cy="21" r="1.3"/><circle cx="24" cy="21" r="1.3"/></symbol>
+ <symbol id="lh-pipette" viewBox="0 0 32 32"><path d="M16 4v5"/><path d="M12 9h8l-2.2 8.5h-3.6z"/><path d="M14.9 17.5 16 23l1.1-5.5"/><circle cx="16" cy="25.6" r="1.4"/></symbol>
+ <symbol id="lh-droplet" viewBox="0 0 32 32"><path d="M16 5c-6 9-8 13-8 16a8 8 0 0 0 16 0c0-3-2-7-8-16z"/></symbol>
+ <symbol id="lh-reservoir" viewBox="0 0 32 32"><path d="M6 9h20l-2 15H8z"/><path d="M8.5 14h15"/></symbol>
+ <symbol id="lh-target" viewBox="0 0 32 32"><circle cx="16" cy="16" r="10"/><circle cx="16" cy="16" r="5.5"/><circle cx="16" cy="16" r="1.6"/></symbol>
+</svg>
+
+<!-- USAGE
+  charm row:  <div class="charm-row">
+                <svg class="charm"><use href="#lh-plate"/></svg>
+                <svg class="charm"><use href="#lh-pipette"/></svg>
+                <svg class="charm"><use href="#lh-droplet"/></svg>
+                <svg class="charm"><use href="#lh-reservoir"/></svg>
+                <svg class="charm"><use href="#lh-target"/></svg>
+              </div>
+  vesica:     <svg class="vesica" viewBox="0 0 74 48"><circle cx="30" cy="24" r="17"/><circle cx="44" cy="24" r="17"/></svg>
+  loop node:  <span class="node accent">world model</span> between <span class="arrow">→</span>
+  dye chip:   keep the blue dye/data color (--dye #2f6fd6) ONLY for data swatches, never chrome.
+-->
