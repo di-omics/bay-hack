@@ -1,67 +1,126 @@
 """Zeon bridge -- make Zeon's arm speak PyLabRobot.
 
-The winning wedge: Zeon built a proprietary NL→vision→arm stack and does NOT use
-PyLabRobot. If a PyLabRobot arm backend targets Zeon's platform, then the entire
-PLR protocol library -- plus your DBTL loop, Rhodamine validation, and conformal
-gate -- runs on Zeon hardware unchanged.
+The winning wedge: Zeon's platform is vision-first and does NOT use PyLabRobot. If
+a PyLabRobot arm backend targets Zeon's platform, then the entire PLR protocol
+library -- plus this DBTL loop, Rhodamine validation, and conformal gate -- runs
+on Zeon hardware unchanged.
 
-`plr-lab-robot` already proved the pattern: it implements a *simulation* backend
-for PyLabRobot's `ExperimentalSCARA` arm, and swapping it for a hardware backend
-(e.g. PreciseFlex) drives a real arm with the same code. This file is the
-on-site stub for a THIRD backend: Zeon.
+Unlike a hand-waved stub, `ZeonArmBackend` RUNS TODAY in simulation: it subclasses
+plr_lr's `SimulationArmBackend` (a full `pylabrobot.arms.backend.SCARABackend`,
+N_JOINTS=5), so `ExperimentalSCARA(backend=ZeonArmBackend())` drives the complete
+pick / place / gripper choreography with no hardware. Every real-motion primitive
+is overridden to record a Zeon-SDK SEAM (`self.zeon_calls`) marking exactly where
+the on-site call goes. The demo beat "swap one backend and the same loop drives
+Zeon's arm" therefore executes live -- see `zeon_swap_selfcheck()`.
 
-ON-SITE PLAN (build #1, once you can see Zeon's SDK/API):
-  1. Find how Zeon exposes motion (Python SDK? REST? gRPC? a socket?).
-  2. Map the SCARA/arm primitives below to Zeon calls.
-  3. Construct `ExperimentalSCARA(backend=ZeonArmBackend(...))` (or point
-     plr-epigenome's robot_arm.RobotArmBackend at Zeon) and re-run the demo.
-  4. Keep plr_lr.SimulationArmBackend as the guaranteed fallback.
+ON-SITE (build #1, once you can see Zeon's SDK): replace each `# TODO: self.sdk...`
+with the real call and drop the `super()` sim fallback. Nothing else changes.
 
-Nothing here imports pylabrobot at module load, so bay-hack still runs in pure
-simulation without it installed.
+This module imports pylabrobot lazily/guarded, so the pure-sim bay-hack path still
+runs without it installed.
 """
 from __future__ import annotations
 
+import asyncio
+import contextlib
+import io
 
-class ZeonArmBackend:
-    """Skeleton PyLabRobot arm backend that would drive Zeon's platform.
+try:
+    from plr_lr.arm.sim_backend import SimulationArmBackend as _Base
+    _HAVE_PLR = True
+except ImportError:                       # pragma: no cover - exercised in CI
+    _Base = object
+    _HAVE_PLR = False
 
-    Shape it to match the arm backend interface your plr_lr code already targets
-    (SCARABackend: setup/stop, move_joints/move_cartesian, gripper open/close,
-    home). Fill each method with the Zeon SDK call discovered on-site.
+
+class ZeonBridgeUnavailable(RuntimeError):
+    """pylabrobot + plr-lab-robot aren't installed, so the Zeon backend can't run."""
+
+
+class ZeonArmBackend(_Base):
+    """A PyLabRobot SCARA arm backend that targets Zeon's platform.
+
+    Runs in simulation today (inherits SimulationArmBackend); on-site, fill the
+    marked seams with the real Zeon SDK. N_JOINTS = 5.
     """
 
-    def __init__(self, sdk=None, host: str | None = None, speed_cap: float = 0.5):
-        self.sdk = sdk                 # Zeon client, injected on-site
+    def __init__(self, *args, sdk=None, host: str | None = None,
+                 speed_cap: float = 0.5, **kwargs):
+        if not _HAVE_PLR:
+            raise ZeonBridgeUnavailable(
+                "pylabrobot + plr-lab-robot required: pip install -e ../plr-lab-robot")
+        super().__init__(*args, **kwargs)
+        self.sdk = sdk                # real Zeon client, injected on-site
         self.host = host
-        self.speed_cap = speed_cap     # keep motion gentle for a live demo
-        self._connected = False
+        self.speed_cap = speed_cap    # keep motion gentle for a live demo
+        self.zeon_calls: list[tuple] = []
 
-    # --- lifecycle ---------------------------------------------------------
-    async def setup(self) -> None:
-        raise NotImplementedError("Connect to Zeon's motion API on-site.")
+    def _seam(self, name: str, *info) -> None:
+        self.zeon_calls.append((name, *info))
 
-    async def stop(self) -> None:
-        self._connected = False
+    # --- motion primitives: log the Zeon seam, then run the sim fallback -------
+    async def home(self):
+        self._seam("home")                       # TODO: self.sdk.home()
+        return await super().home()
 
-    async def home(self) -> None:
-        raise NotImplementedError("Map to Zeon home/reset.")
+    async def move_to(self, *a, **k):
+        self._seam("move_to")                    # TODO: self.sdk.move_cartesian(pose, speed=self.speed_cap)
+        return await super().move_to(*a, **k)
 
-    # --- motion (map to Zeon primitives) -----------------------------------
-    async def move_cartesian(self, x: float, y: float, z: float, **kw) -> None:
-        raise NotImplementedError("Map to Zeon Cartesian move (respect speed_cap).")
+    async def approach(self, *a, **k):
+        self._seam("approach")                   # TODO: self.sdk.approach(pose, access)
+        return await super().approach(*a, **k)
 
-    async def move_joints(self, *joints: float) -> None:
-        raise NotImplementedError("Map to Zeon joint move if exposed.")
+    async def pick_up_resource(self, *a, **k):
+        self._seam("pick_up_resource")           # TODO: self.sdk.grip_plate(...)
+        return await super().pick_up_resource(*a, **k)
 
-    # --- gripper (needed for plate moves + DecapSkill) ---------------------
-    async def gripper(self, open: bool) -> None:
-        raise NotImplementedError("Map to Zeon gripper open/close.")
+    async def drop_resource(self, *a, **k):
+        self._seam("drop_resource")              # TODO: self.sdk.release_plate(...)
+        return await super().drop_resource(*a, **k)
+
+    async def open_gripper(self, *a, **k):
+        self._seam("open_gripper")               # TODO: self.sdk.gripper(open=True)
+        return await super().open_gripper(*a, **k)
+
+    async def close_gripper(self, *a, **k):
+        self._seam("close_gripper")              # TODO: self.sdk.gripper(open=False)
+        return await super().close_gripper(*a, **k)
 
 
-def bridge_notes() -> str:
-    return (
-        "ZeonArmBackend is a stub. On-site: discover Zeon's motion API, implement "
-        "setup/home/move_cartesian/gripper, then run the same DBTL loop with the "
-        "arm backend swapped from SimulationArmBackend to ZeonArmBackend."
-    )
+def zeon_workcell(**backend_kwargs):
+    """A plr_lr Workcell driven by ZeonArmBackend instead of the sim backend --
+    the one-line swap that points the whole loop at Zeon's platform."""
+    if not _HAVE_PLR:
+        raise ZeonBridgeUnavailable("pylabrobot + plr-lab-robot required")
+    from plr_lr import Workcell
+    from pylabrobot.arms import ExperimentalSCARA
+    return Workcell(arm=ExperimentalSCARA(backend=ZeonArmBackend(**backend_kwargs)))
+
+
+def zeon_swap_selfcheck() -> dict:
+    """Prove the backend swap RUNS: build a Workcell on ZeonArmBackend and move a
+    plate between two taught sites in sim (no hardware). Returns the Zeon-SDK seams
+    that fired -- exactly the calls to wire to the real SDK on-site."""
+    if not _HAVE_PLR:
+        raise ZeonBridgeUnavailable("pylabrobot + plr-lab-robot required")
+    from plr_lr import Labware
+
+    async def _go():
+        wc = zeon_workcell()
+        await wc.setup()
+        plate = Labware(name="assay_plate")
+        wc.add_site("reader_out", x=180, y=0, z=12, occupant=plate)
+        wc.add_site("reader_in", x=-180, y=40, z=12)
+        with contextlib.redirect_stdout(io.StringIO()):
+            await wc.move_plate("reader_out", "reader_in")
+        be = wc.backend
+        return {
+            "passed": wc.world.sites["reader_in"].occupant is not None,
+            "backend": type(be).__name__,
+            "commands": len(be.trace),
+            "zeon_calls": len(be.zeon_calls),
+            "seams": sorted({c[0] for c in be.zeon_calls}),
+        }
+
+    return asyncio.run(_go())

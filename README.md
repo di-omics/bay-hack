@@ -91,9 +91,13 @@ Then open Claude Code in this folder and paste `KICKOFF_PROMPT.md`.
 
 ## The Zeon bridge (the win)
 
-Zeon doesn't use PyLabRobot. Write a PLR arm backend that targets their platform
-(`bayhack/zeon_bridge.py`), and the whole PLR ecosystem + your DBTL loop +
-Rhodamine validation run on Zeon hardware. Prep the shape now; wire their SDK
-on-site. Pure-PLR loop is the guaranteed fallback.
+Zeon doesn't use PyLabRobot. `bayhack/zeon_bridge.py::ZeonArmBackend` is a PLR arm
+backend that targets their platform &mdash; and it **already runs the swap in
+simulation today** (it subclasses `plr_lr`'s `SimulationArmBackend`, a full
+`pylabrobot` `SCARABackend`), so `ExperimentalSCARA(backend=ZeonArmBackend())`
+drives the whole pick/place choreography with no hardware. Each motion primitive
+logs a Zeon-SDK seam; on-site you fill those seams with the real SDK and the whole
+PLR ecosystem + this DBTL loop + Rhodamine validation run on Zeon's arm. The
+pure-PLR loop is the guaranteed fallback.
 
 MIT licensed.
