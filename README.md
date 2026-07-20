@@ -5,6 +5,8 @@ World Models Hack @ Zeon Systems (Jul 25–26, SF).
 
 **Live site:** https://di-omics.github.io/bay-hack/ &middot; **Pitch slide:** [docs/slide.html](docs/slide.html)
 
+![bay-hack loop demo](docs/demo.gif)
+
 bay-hack is the **glue** that composes the [@di-omics](https://github.com/di-omics)
 autonomous-lab stack into one closed loop, plus a **bridge to Zeon's platform**.
 It is deliberately thin — the heavy lifting already lives in your repos.
