@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bay-hack · a world model runs the bench</title>
+<meta name="description" content="A world model runs the bench. A GP world model proposes the next experiment, an agent runs it on a sim-first liquid handler through plr-mcp, and a Rhodamine-B gate verifies the volumes physically before a conformal QC gate decides accept or escalate. Track-A entry, AI for Science World Models Hack @ Zeon Systems.">
+
+<!-- 1) FONTS (from house-style kit — verbatim) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;500;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<!-- 2) STYLE (from house-style kit — verbatim) -->
+<style>
+:root{
+  --matcha:#5cae5a; --matcha-deep:#3c8446; --ink:#28372a;
+  --bg:#ffffff; --wash:#f2f8f3; --line:#e6efe8; --muted:#6f8274; --dye:#2f6fd6;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:'Manrope',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;}
+.eyebrow{font-weight:800;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--matcha-deep);margin:0;}
+.title{font-weight:800;line-height:1.02;color:var(--ink);letter-spacing:-.02em;margin:0;}
+.title .lite{font-weight:200;color:var(--matcha-deep);letter-spacing:0;}
+.lede{color:var(--muted);font-weight:500;}
+a{color:var(--matcha-deep);text-decoration:none;font-weight:800;}
+a:hover{text-decoration:underline;}
+.charm-row{display:flex;gap:14px;align-items:center;}
+svg.charm{width:30px;height:30px;fill:none;stroke:var(--matcha);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
+.pill{display:inline-flex;align-items:center;gap:.5em;border:1.5px solid var(--matcha);color:var(--matcha-deep);
+  border-radius:999px;padding:.5em 1.15em;font-weight:800;font-size:12px;letter-spacing:.1em;text-transform:uppercase;background:#fff;}
+.pill--solid{background:var(--matcha);color:#fff;border-color:var(--matcha);}
+.card{background:#fff;border:1px solid var(--line);border-left:3px solid var(--matcha);border-radius:12px;padding:18px 20px;}
+.card h3{margin:0 0 6px;font-weight:800;font-size:15px;color:var(--ink);}
+.card p{margin:0;color:var(--muted);font-size:14px;font-weight:500;}
+.term{background:var(--wash);border-left:3px solid var(--matcha);border-radius:10px;padding:14px 16px;
+  font-family:'JetBrains Mono',ui-monospace,monospace;font-size:14px;color:var(--ink);overflow:auto;}
+.term .c{color:var(--matcha-deep);}
+.stat b{font-weight:800;font-size:26px;color:var(--matcha-deep);letter-spacing:-.02em;display:block;}
+.stat span{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:800;}
+.flow{display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+.flow .node{border:1.5px solid var(--matcha);border-radius:10px;padding:9px 12px;font-weight:800;font-size:13px;
+  color:var(--ink);background:#fff;text-align:center;}
+.flow .node.accent{background:var(--matcha);color:#fff;border-color:var(--matcha);}
+.flow .arrow{color:var(--matcha);font-weight:800;font-size:16px;}
+.chip{display:inline-flex;align-items:center;gap:.45em;border:1px solid var(--line);border-radius:999px;
+  padding:.35em .8em;font-size:12px;font-weight:800;color:var(--matcha-deep);background:var(--wash);}
+.chip.dye{color:var(--dye);}
+svg.vesica{width:74px;height:48px;fill:none;stroke:var(--matcha);stroke-width:1.4;}
+hr.rule{border:none;border-top:1px solid var(--line);margin:0;}
+</style>
+
+<!-- SUPPLEMENT — layout only. Same CONTRAST RULE: text uses --ink / --matcha-deep / --muted;
+     bright --matcha is graphics only (borders, arrows, dashed strokes, node fills). -->
+<style>
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px;}
+img,svg{max-width:100%;}
+
+/* header */
+header.site{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.86);
+  -webkit-backdrop-filter:saturate(1.4) blur(10px);backdrop-filter:saturate(1.4) blur(10px);
+  border-bottom:1px solid var(--line);}
+header.site .wrap{display:flex;align-items:center;justify-content:space-between;gap:18px;
+  padding-top:14px;padding-bottom:14px;}
+.brand{display:flex;align-items:center;gap:14px;min-width:0;}
+.brand .charm-row{gap:8px;}
+.brand svg.charm{width:21px;height:21px;}
+.wordmark{font-weight:800;font-size:20px;letter-spacing:-.02em;color:var(--ink);white-space:nowrap;
+  font-family:'JetBrains Mono',ui-monospace,monospace;}
+.nav-pills{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.pill{text-decoration:none;transition:transform .12s ease, box-shadow .12s ease, background .12s ease, color .12s ease;white-space:nowrap;}
+.pill:hover{text-decoration:none;transform:translateY(-1px);}
+.pill--solid:hover{box-shadow:0 8px 20px rgba(60,132,70,.30);}
+.pill--ghost:hover{background:var(--wash);}
+
+/* rhythm */
+section{padding:58px 0;}
+.sec-head{max-width:740px;margin-bottom:28px;}
+.sec-head .eyebrow{margin-bottom:12px;}
+.sec-head .title{font-size:clamp(24px,3.6vw,33px);}
+.sec-head .lede{margin:14px 0 0;font-size:16px;line-height:1.6;}
+
+/* hero */
+.hero{padding-top:74px;padding-bottom:38px;}
+.hero .charm-row{margin-bottom:24px;}
+.hero svg.charm{width:34px;height:34px;}
+.hero .eyebrow{margin-bottom:18px;}
+.title.xl{font-size:clamp(46px,8.4vw,88px);}
+.title.xl .lite{display:block;font-size:.6em;margin-top:.12em;line-height:1.05;}
+.hero .lede{font-size:clamp(16.5px,1.75vw,20px);max-width:700px;margin:22px 0 30px;line-height:1.58;}
+.hero .lede b{font-weight:800;color:var(--matcha-deep);}
+.cta{display:flex;flex-wrap:wrap;gap:12px;align-items:center;}
+.cta .pill{font-size:12.5px;padding:.7em 1.35em;}
+.meta{margin-top:24px;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12.5px;
+  color:var(--muted);font-weight:400;letter-spacing:.01em;}
+.meta a{font-weight:600;}
+
+/* stat strip */
+.stats{display:flex;flex-wrap:wrap;gap:14px;margin-top:36px;}
+.stats .stat{flex:1 1 150px;min-width:138px;background:var(--wash);border:1px solid var(--line);
+  border-radius:14px;padding:16px 18px;}
+.stats .stat b{font-size:23px;}
+
+/* the loop */
+.panel{background:var(--wash);border:1px solid var(--line);border-radius:18px;padding:26px 26px 24px;}
+.panel .flow{gap:10px;}
+.node.swap{border-style:dashed;}
+.node.ghost{color:var(--muted);border-style:dashed;opacity:.85;font-weight:800;}
+.branch{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;
+  color:var(--matcha-deep);letter-spacing:.02em;}
+.bridge{margin-top:12px;}
+.loop-note{margin:20px 0 0;color:var(--muted);font-weight:500;font-size:14.5px;line-height:1.6;}
+.loop-note b{font-weight:800;color:var(--ink);}
+.thesis{margin:22px 0 0;font-family:'JetBrains Mono',ui-monospace,monospace;
+  font-size:13px;line-height:2.05;color:var(--ink);}
+.thesis .a{color:var(--matcha);font-weight:600;padding:0 .1em;}
+.thesis b{font-weight:600;color:var(--matcha-deep);}
+
+/* composition grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(244px,1fr));gap:14px;}
+.card .mod{font-family:'JetBrains Mono',ui-monospace,monospace;font-weight:600;
+  color:var(--matcha-deep);font-size:12.5px;}
+.card h3 .k{color:var(--muted);font-weight:800;font-size:12px;letter-spacing:.02em;}
+
+/* zeon wedge */
+.wedge{border:1px solid var(--line);border-left:4px solid var(--matcha);
+  background:linear-gradient(180deg,var(--wash),#fbfefb);border-radius:18px;padding:30px 32px;}
+.wedge .eyebrow{margin-bottom:14px;}
+.wedge p{margin:0;max-width:860px;font-size:clamp(16px,1.85vw,20px);line-height:1.55;
+  color:var(--ink);font-weight:500;}
+.wedge p strong{color:var(--matcha-deep);font-weight:800;}
+
+/* quickstart */
+.term-wrap{max-width:780px;}
+.term-wrap .term{font-size:13.5px;line-height:1.85;}
+.term .p{color:var(--matcha-deep);}
+.caption{margin:16px 0 0;color:var(--muted);font-size:13.5px;font-weight:500;line-height:1.6;max-width:620px;}
+.caption b{font-weight:800;color:var(--ink);}
+
+/* footer */
+footer.site{border-top:1px solid var(--line);background:var(--wash);padding:40px 0;margin-top:20px;}
+footer .wrap{display:flex;align-items:center;justify-content:space-between;gap:22px;flex-wrap:wrap;}
+footer .f-brand{display:flex;align-items:center;gap:18px;}
+footer .f-tag{font-weight:800;font-size:12.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink);}
+footer .f-links{display:flex;gap:22px;font-size:13px;flex-wrap:wrap;}
+
+@media (max-width:760px){
+  section{padding:46px 0;}
+  .hero{padding-top:48px;}
+  .brand .charm-row{display:none;}
+  .nav-pills .full{display:none;}
+  .stats .stat{flex:1 1 44%;}
+}
+@media (max-width:460px){
+  .wrap{padding:0 18px;}
+  .stats .stat{flex:1 1 100%;}
+  footer .wrap{flex-direction:column;align-items:flex-start;}
+}
+</style>
+</head>
+<body>
+
+<!-- 3) LIQUID-HANDLING SVG SPRITE (from house-style kit — verbatim, placed once) -->
+<svg id="lh-sprite" width="0" height="0" style="position:absolute" aria-hidden="true">
+ <symbol id="lh-plate" viewBox="0 0 32 32"><rect x="4" y="7" width="24" height="18" rx="2.5"/>
+  <circle cx="9" cy="12" r="1.3"/><circle cx="14" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/><circle cx="24" cy="12" r="1.3"/>
+  <circle cx="9" cy="16.5" r="1.3"/><circle cx="14" cy="16.5" r="1.3"/><circle cx="19" cy="16.5" r="1.3"/><circle cx="24" cy="16.5" r="1.3"/>
+  <circle cx="9" cy="21" r="1.3"/><circle cx="14" cy="21" r="1.3"/><circle cx="19" cy="21" r="1.3"/><circle cx="24" cy="21" r="1.3"/></symbol>
+ <symbol id="lh-pipette" viewBox="0 0 32 32"><path d="M16 4v5"/><path d="M12 9h8l-2.2 8.5h-3.6z"/><path d="M14.9 17.5 16 23l1.1-5.5"/><circle cx="16" cy="25.6" r="1.4"/></symbol>
+ <symbol id="lh-droplet" viewBox="0 0 32 32"><path d="M16 5c-6 9-8 13-8 16a8 8 0 0 0 16 0c0-3-2-7-8-16z"/></symbol>
+ <symbol id="lh-reservoir" viewBox="0 0 32 32"><path d="M6 9h20l-2 15H8z"/><path d="M8.5 14h15"/></symbol>
+ <symbol id="lh-target" viewBox="0 0 32 32"><circle cx="16" cy="16" r="10"/><circle cx="16" cy="16" r="5.5"/><circle cx="16" cy="16" r="1.6"/></symbol>
+</svg>
+
+<!-- HEADER -->
+<header class="site">
+  <div class="wrap">
+    <div class="brand">
+      <div class="charm-row" aria-hidden="true">
+        <svg class="charm"><use href="#lh-plate"/></svg>
+        <svg class="charm"><use href="#lh-pipette"/></svg>
+        <svg class="charm"><use href="#lh-droplet"/></svg>
+        <svg class="charm"><use href="#lh-reservoir"/></svg>
+        <svg class="charm"><use href="#lh-target"/></svg>
+      </div>
+      <span class="wordmark">bay-hack</span>
+    </div>
+    <nav class="nav-pills">
+      <a class="pill pill--solid" href="https://github.com/di-omics/bay-hack">View on GitHub</a>
+      <a class="pill pill--ghost full" href="#quickstart">Run the demo</a>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div class="charm-row" aria-hidden="true">
+      <svg class="charm"><use href="#lh-plate"/></svg>
+      <svg class="charm"><use href="#lh-pipette"/></svg>
+      <svg class="charm"><use href="#lh-droplet"/></svg>
+      <svg class="charm"><use href="#lh-reservoir"/></svg>
+      <svg class="charm"><use href="#lh-target"/></svg>
+    </div>
+    <p class="eyebrow">24hr AI for Science · World Models Hack @ Zeon Systems</p>
+    <h1 class="title xl">bay-hack<span class="lite">a world model runs the bench</span></h1>
+    <p class="lede">A plain-English goal goes in; the next pipetting run comes out. A <b>GP world model</b> proposes the next experiment, an agent executes it on a real (sim-first) liquid handler through <b>plr-mcp</b>, and fluorescence plus a <b>Rhodamine-B</b> gate verify the volumes physically — before a conformal <b>QC gate</b> decides accept or escalate, and the loop repeats.</p>
+    <div class="cta">
+      <a class="pill pill--solid" href="https://github.com/di-omics/bay-hack">View on GitHub</a>
+      <a class="pill pill--ghost" href="#quickstart">Run the demo</a>
+    </div>
+    <p class="meta">@di-omics — full-stack biologist building autonomous labs&nbsp;&nbsp;·&nbsp;&nbsp;Track A&nbsp;&nbsp;·&nbsp;&nbsp;Jul 25–26 · SF</p>
+
+    <div class="stats">
+      <div class="stat"><b>6</b><span>runs vs ~26 grid</span></div>
+      <div class="stat"><b>R²≥0.995</b><span>Rhodamine-B validated</span></div>
+      <div class="stat"><b>conformal</b><span>QC gate</span></div>
+      <div class="stat"><b>7</b><span>tests green</span></div>
+      <div class="stat"><b>0</b><span>deps to demo</span></div>
+    </div>
+  </div>
+</section>
+
+<hr class="rule">
+
+<!-- THE LOOP -->
+<section id="loop">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">The closed loop</p>
+      <h2 class="title">Design–Build–Test–Learn, closed around a world model</h2>
+      <p class="lede">Six stages, closed. The <b>Design</b> stage is a world model that decides which well to run next — then Build/Test pipettes it, Verify measures it, and Learn feeds the next Plan. One backend swap at the Bridge points the same loop at Zeon's arm.</p>
+    </div>
+
+    <div class="panel">
+      <div class="flow">
+        <span class="node">Plan</span><span class="arrow">→</span>
+        <span class="node accent">Design · world model</span><span class="arrow">→</span>
+        <span class="node">Build / Test</span><span class="arrow">→</span>
+        <span class="node">Verify</span><span class="arrow">→</span>
+        <span class="node">Learn</span><span class="arrow">↻</span>
+        <span class="node ghost">Plan</span>
+      </div>
+      <div class="flow bridge">
+        <span class="branch">└─ bridge</span><span class="arrow">→</span>
+        <span class="node swap">Zeon arm</span>
+      </div>
+      <p class="loop-note">The <b>Design</b> node is the world model — everything else executes and checks its proposal. <b>Learn</b> loops back to <b>Plan</b>; the dashed <b>Bridge</b> is the one swappable backend.</p>
+
+      <p class="thesis">Plain-English goal <span class="a">→</span> a GP <b>world model</b> proposes the next experiment <span class="a">→</span> an agent executes it on a real (sim-first) liquid handler through <b>plr-mcp</b> <span class="a">→</span> fluorescence + a <b>Rhodamine-B</b> gate + CV verify it physically <span class="a">→</span> a conformal <b>QC gate</b> decides accept / escalate <span class="a">→</span> repeat <span class="a">→</span> then swap one backend and the same loop drives <b>Zeon's arm</b>.</p>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT COMPOSES INTO WHAT -->
+<section id="stack">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">What composes into what</p>
+      <h2 class="title">Each stage is a real module</h2>
+      <p class="lede">No new framework — the loop is assembled from existing di-omics repos, each doing one job on the plate.</p>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>Plan <span class="k">· NL → protocol</span></h3>
+        <p><span class="mod">plr-epigenome</span> · tipseq_plr/sow.py — a natural-language goal becomes a validated pipetting protocol.</p>
+      </div>
+      <div class="card">
+        <h3>Design <span class="k">· world model</span></h3>
+        <p><span class="mod">ml-bio-eval / lab-world-model</span> — a GP world model + ParEGO propose the next well to run.</p>
+      </div>
+      <div class="card">
+        <h3>Build / Test <span class="k">· liquid handling</span></h3>
+        <p><span class="mod">plr-mcp</span> — plr_setup_deck, plr_transfer, plr_read_plate drive the deck and plate reader.</p>
+      </div>
+      <div class="card">
+        <h3>Move / dexterity</h3>
+        <p><span class="mod">plr-lab-robot</span> — Workcell, vision_guided_pick, DecapSkill handle labware and lids.</p>
+      </div>
+      <div class="card">
+        <h3>Verify <span class="k">· volumes</span></h3>
+        <p><span class="mod">plr-epigenome</span> · validation/rhodamine.py — Rhodamine-B absorbance, R²≥0.995 accept gate.</p>
+      </div>
+      <div class="card">
+        <h3>Verify <span class="k">· steps</span></h3>
+        <p><span class="mod">lab-cv</span> — computer-vision checkpoints confirm each physical step happened.</p>
+      </div>
+      <div class="card">
+        <h3>Learn</h3>
+        <p><span class="mod">ml-bio-eval</span> — split-conformal decides accept / reject / escalate before the loop repeats.</p>
+      </div>
+      <div class="card">
+        <h3>Bridge <span class="k">· to Zeon</span></h3>
+        <p><span class="mod">bayhack/zeon_bridge.py</span> — a PyLabRobot arm backend that points the whole loop at Zeon.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ZEON WEDGE -->
+<section id="wedge">
+  <div class="wrap">
+    <div class="wedge">
+      <p class="eyebrow">The Zeon wedge</p>
+      <p><strong>Zeon doesn't use PyLabRobot.</strong> Write a <strong>PLR arm backend</strong> for their platform and the whole PLR ecosystem + this DBTL loop + <strong>Rhodamine validation</strong> runs on Zeon hardware — plus the <strong>trust layer</strong> a vision-first stack still needs.</p>
+    </div>
+  </div>
+</section>
+
+<!-- QUICKSTART -->
+<section id="quickstart">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">Quickstart</p>
+      <h2 class="title">Run the loop in one command</h2>
+      <p class="lede">The demo runs the same Bayesian loop against a simulator — no lab, no dependencies.</p>
+    </div>
+
+    <div class="term-wrap">
+      <pre class="term"><span class="c"># stdlib only — recovers a planted optimum in ~6 runs vs ~26 for a grid sweep</span>
+<span class="p">$</span> python -m bayhack.demo</pre>
+      <p class="caption"><b>Zero dependencies. Seven tests green.</b> The same world-model loop that drives the simulator drives the bench — and, at the Bridge, Zeon's arm.</p>
+      <div class="cta" style="margin-top:20px">
+        <a class="pill pill--solid" href="https://github.com/di-omics/bay-hack">View on GitHub</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="site">
+  <div class="wrap">
+    <div class="f-brand">
+      <svg class="vesica" viewBox="0 0 74 48" aria-hidden="true"><circle cx="30" cy="24" r="17"/><circle cx="44" cy="24" r="17"/></svg>
+      <span class="f-tag">di-omics · autonomous labs</span>
+    </div>
+    <nav class="f-links">
+      <a href="https://github.com/di-omics/bay-hack">github.com/di-omics/bay-hack</a>
+      <a href="https://github.com/di-omics">github.com/di-omics</a>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
