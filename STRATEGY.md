@@ -32,13 +32,14 @@ next?" The trust ledger joins their evidence.
 Use one plate and one visible assay. Do not demo every supporting repository.
 
 1. Show the 40 uL plate plan: A1 stock, A2 diluent, B1 onward proposals.
-2. Run two seed wells. Both pass plan, Rhodamine or colorimetric, and CV gates.
-3. Let the scientific model choose the next formulations.
-4. Show the response and uncertainty improve while concrete volumes remain visible.
-5. Land on ACCEPT in about six total runs.
-6. Open the trust receipt and point to `measurement.provenance`.
-7. Execute the 20 uL follow-up from the accepted well to H12.
-8. If the Zeon adapter is live, show the physical model execute the same action.
+2. Click **Prove refusal**. A reused tip is rejected with zero robot commands.
+3. Run two seed wells. Both pass plan, Rhodamine or colorimetric, and CV gates.
+4. Let the scientific model choose the next formulations.
+5. Show the response and uncertainty improve while concrete volumes remain visible.
+6. Land on ACCEPT only after the objective and uncertainty criteria both pass.
+7. Open the trust receipt and point to `measurement.provenance`.
+8. Execute the 20 uL follow-up from the accepted well to H12.
+9. If the Zeon adapter is live, show the physical model execute the same action.
 
 ## 90-second script
 
@@ -59,7 +60,8 @@ liquid-handling experiment under uncertainty."
 per proposal, and a fresh tip for each liquid. Even the seed runs must pass the
 volume and camera gates before the model can learn."
 
-Run the dashboard. Point to the seed rows, volumes, signal, and ACCEPT.
+Click **Prove refusal**, then run the dashboard. Point to zero robot commands,
+the seed rows, volumes, signal, objective threshold, and ACCEPT.
 
 **0:58 to 1:15**
 
@@ -119,6 +121,13 @@ six runs, 240 uL, and 12 tips.
 
 The measurement does not train the model. The run escalates, remains visible in
 the ledger, and the operator can retry or inspect the physical system.
+
+**Does acceptance use the planted simulator optimum?**
+
+No. The planted optimum is used only to score the modeled benchmark. The
+controller accepts when the best trustworthy signal clears the declared assay
+objective and the uncertainty gate clears. A physical bench does not expose
+ground truth to the controller.
 
 **What happens after acceptance?**
 

@@ -19,12 +19,21 @@ from dataclasses import asdict, dataclass
 
 
 ROWS = "ABCDEFGH"
+COLUMNS = tuple(str(column) for column in range(1, 13))
 DESTINATION_WELLS = tuple(
     f"{row}{column}"
     for column in range(1, 13)
     for row in "BCDEFG"
 )
 MAX_EXPERIMENTS = 47  # two unique tips per run, with H12 reserved for follow-up
+
+
+def is_well_name(value: str) -> bool:
+    """Return whether a string names one position on a standard 96-well plate."""
+    if not isinstance(value, str) or len(value) < 2:
+        return False
+    row, column = value[0].upper(), value[1:]
+    return row in ROWS and column in COLUMNS
 
 
 @dataclass(frozen=True)
@@ -65,6 +74,16 @@ class LiquidHandlingPlan:
         reasons: list[str] = []
         if not 0.0 <= self.design_x <= 1.0:
             reasons.append("design_x must be within [0, 1]")
+        if not is_well_name(self.destination):
+            reasons.append("destination is not a valid 96-well position")
+        if self.total_volume_ul <= 0:
+            reasons.append("planned total volume must be positive")
+        if self.stock_ul < 0 or self.diluent_ul < 0:
+            reasons.append("component volumes must not be negative")
+        if abs(self.stock_ul + self.diluent_ul - self.total_volume_ul) > 0.11:
+            reasons.append("component volumes do not sum to the planned total")
+        if not self.transfers:
+            reasons.append("plan contains no transfers")
         if self.destination in {t.source for t in self.transfers}:
             reasons.append("destination overlaps a source well")
         if self.total_volume_ul > well_capacity_ul:
@@ -73,13 +92,29 @@ class LiquidHandlingPlan:
             reasons.append("transfer volumes do not sum to the planned total")
         if len({t.tip for t in self.transfers}) != len(self.transfers):
             reasons.append("each liquid must use a unique tip")
+        reagent_volumes: dict[str, float] = {}
         for transfer in self.transfers:
+            reagent_volumes[transfer.reagent] = (
+                reagent_volumes.get(transfer.reagent, 0.0) + transfer.volume_ul
+            )
+            if not is_well_name(transfer.source):
+                reasons.append(f"{transfer.reagent} source is not a valid well")
+            if transfer.destination != self.destination:
+                reasons.append(
+                    f"{transfer.reagent} destination does not match the plan"
+                )
+            if not is_well_name(transfer.tip):
+                reasons.append(f"{transfer.reagent} tip is not a valid rack position")
             if transfer.volume_ul < min_transfer_ul:
                 reasons.append(
                     f"{transfer.reagent} transfer is below {min_transfer_ul:g} uL"
                 )
             if transfer.volume_ul > 200.0:
                 reasons.append(f"{transfer.reagent} transfer exceeds 200 uL")
+        if abs(reagent_volumes.get("assay_stock", 0.0) - self.stock_ul) > 0.11:
+            reasons.append("assay stock transfer does not match plan metadata")
+        if abs(reagent_volumes.get("diluent", 0.0) - self.diluent_ul) > 0.11:
+            reasons.append("diluent transfer does not match plan metadata")
         return {"passed": not reasons, "reasons": reasons}
 
     def to_dict(self) -> dict:
@@ -100,6 +135,10 @@ class FollowUpAction:
 
     def verify(self, available_ul: float, product_well: str) -> dict:
         reasons: list[str] = []
+        if not is_well_name(self.source) or not is_well_name(self.destination):
+            reasons.append("follow-up source or destination is not a valid well")
+        if not is_well_name(self.tip):
+            reasons.append("follow-up tip is not a valid rack position")
         if self.source == self.destination:
             reasons.append("follow-up source and destination are identical")
         if self.destination != product_well:

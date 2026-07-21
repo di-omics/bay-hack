@@ -6,8 +6,8 @@ scientific model.
 
 Every run now produces an append-only trust receipt. The receipt contains the
 concrete wells and volumes, plan verification, execution backend, measurement
-provenance, Rhodamine and CV evidence, conformal decision, world-model state,
-and the final follow-up action.
+provenance, Rhodamine and CV evidence, objective threshold, uncertainty decision,
+world-model state, and the final follow-up action.
 
 ## Evidence labels
 
@@ -23,12 +23,13 @@ No modeled value may be described as measured.
 | Stage | Acceptance criterion | Failure caught | Current evidence |
 |---|---|---|---|
 | Plan | source and destination are distinct, volume fits the well, transfers sum to 40 uL, and each liquid uses a unique tip | overflow, impossible volume, cross-contamination, bad destination | implemented and tested |
+| Pre-act refusal | any invalid plan produces zero backend commands, no measurement, no model update, and no follow-up | unsafe recovery code accidentally moving hardware | implemented, tested, and visible in the dashboard |
 | Seed runs | both seed experiments pass the same physical gates as optimization rounds before training the model | unverified initialization contaminating the model | implemented and visible in the ledger |
 | Scientific design | model recovers the planted optimum under the declared budget | premature convergence or search failure | modeled benchmark, 30 deterministic seeds |
 | Build / Test | concrete stock and diluent transfers execute before the read | abstract optimization with no bench plan | implemented in stdlib and `plr-mcp` chatterbox |
 | Volume verification | linearity R2 >= 0.995 plus the stricter `tipseq_plr` accuracy and CV criteria when that seam is installed | trusting a bad dispense | gate implementation exercised on synthetic fixtures, physical data owed on-site |
 | Step verification | camera checkpoint reports success | spill, missed move, missing pellet, or bad plate pose | simulated checkpoint, physical camera owed on-site |
-| Learn | only physically trustworthy reads update the model; conformal QC decides accept or escalate | overconfident model update | implemented and tested |
+| Learn | only physically trustworthy reads update the model; ACCEPT requires signal >= 0.85 and uncertainty clearance | low-quality or overconfident acceptance | implemented without hidden ground truth and tested |
 | Follow-up | accepted well sends 20 uL to reserved product well H12 with a fresh tip | loop stops at measurement and does not act on the result | implemented and tested |
 | Physical world | Zeon workflow runs in simulation first and preserves safe state transitions | collision, stale scene, bad pose | adapter shape runs in simulation, venue API owed on-site |
 
@@ -40,6 +41,8 @@ No modeled value may be described as measured.
 - About 4.3x fewer search runs than the declared 26-point grid baseline
 - About 800 uL and 40 tips saved in the search phase at 40 uL per experiment
 - Machine-readable trust receipt with explicit modeled measurement provenance
+- Reader CSV and camera-image adapters with calibrated, source-specific provenance
+- Unsafe-plan refusal receipt proving zero commands before recovery
 - Verified 20 uL follow-up transfer to H12
 - Real `plr-mcp`, `tipseq_plr`, `labworld`, and `plr_lr` adapters that load lazily
 - Zeon adapter shape exercising a simulated PyLabRobot arm backend
@@ -59,6 +62,8 @@ label from modeled or simulated to measured or hardware-validated.
 
 ```bash
 python -m bayhack.demo --ledger run_artifacts/trust.json
+python -m bayhack.safety --output run_artifacts/refusal.json
+python -m bayhack.measurements --help
 python -m bayhack.dashboard
 python -m bayhack.benchmark
 pytest -q

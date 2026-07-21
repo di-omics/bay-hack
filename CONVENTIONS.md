@@ -24,6 +24,9 @@ Pipeline:
 6. Label measurement provenance honestly.
 7. Keep venue hardware behind lazy adapters.
 8. Treat the Zeon integration as upside, not a fallback dependency.
+9. Use the shipped CSV or camera measurement adapter before writing a new one.
+10. ACCEPT requires both the assay objective and uncertainty clearance.
+11. Preserve `python -m bayhack.safety` as a zero-command refusal proof.
 
 ## Supporting seams
 
@@ -40,6 +43,7 @@ Pipeline:
 
 ```bash
 python -m bayhack.demo
+python -m bayhack.safety
 python -m bayhack.benchmark
 pytest -q
 ```

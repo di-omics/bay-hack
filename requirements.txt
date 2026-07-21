@@ -12,5 +12,5 @@
 # Optional demo niceties:
 # matplotlib>=3.8     # convergence plot
 # pytest>=8.0         # tests
-# pillow>=12          # regenerate docs/demo.gif
+# pillow>=12          # camera colorimetry + regenerate docs/demo.gif
 # qrcode>=8           # regenerate docs/qr.svg

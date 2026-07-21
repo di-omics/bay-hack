@@ -18,6 +18,7 @@ class TrustRecord:
     measurement: dict
     physical_verification: dict
     decision: str
+    acceptance: dict
     world_model: dict
 
     def to_dict(self) -> dict:
@@ -28,7 +29,7 @@ class TrustRecord:
 class TrustLedger:
     """Append-only evidence for planning, execution, measurement, and follow-up."""
 
-    schema_version: str = "1.0"
+    schema_version: str = "1.1"
     records: list[TrustRecord] = field(default_factory=list)
     follow_up: dict | None = None
 
@@ -40,6 +41,7 @@ class TrustLedger:
         backend: str,
         measurement_value: float,
         measurement_provenance: str,
+        measurement_evidence: dict,
         rhodamine: dict,
         cv: dict,
         verification_provenance: str,
@@ -47,6 +49,10 @@ class TrustLedger:
         best_x: float,
         best_y: float,
         model_updated: bool,
+        uncertainty: float,
+        target_signal: float,
+        target_met: bool,
+        conformal_decision: str,
     ) -> None:
         prior_model = next(
             (
@@ -75,6 +81,7 @@ class TrustLedger:
                 measurement={
                     "value": measurement_value,
                     "provenance": measurement_provenance,
+                    "evidence": measurement_evidence,
                 },
                 physical_verification={
                     "passed": bool(rhodamine["passed"] and cv["passed"]),
@@ -83,6 +90,13 @@ class TrustLedger:
                     "cv": cv,
                 },
                 decision=decision,
+                acceptance={
+                    "target_signal": target_signal,
+                    "target_met": target_met,
+                    "uncertainty": uncertainty,
+                    "conformal_decision": conformal_decision,
+                    "decision": decision,
+                },
                 world_model=model_state,
             )
         )

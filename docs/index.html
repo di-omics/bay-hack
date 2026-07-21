@@ -206,7 +206,7 @@ footer .f-links{display:flex;gap:22px;font-size:13px;flex-wrap:wrap;}
     </div>
     <p class="eyebrow">24hr AI for Science · World Models Hack @ Zeon Systems</p>
     <h1 class="title xl">bay-hack<span class="lite">two world models close the liquid-handling loop</span></h1>
-    <p class="lede"><b>Zeon's physical world model</b> represents the bench and safe execution. A complementary <b>scientific world model</b> chooses the next 40 uL formulation. Physical MCP executes concrete wells and volumes, measurement plus a <b>Rhodamine-B</b> gate verify the result, and the accepted well moves downstream.</p>
+    <p class="lede"><b>Zeon's physical world model</b> represents the bench and safe execution. A complementary <b>scientific world model</b> chooses the next 40 uL formulation. Invalid plans are refused before motion. Physical MCP executes verified wells and volumes, measurement plus a <b>Rhodamine-B</b> gate verify the result, and the accepted well moves downstream.</p>
     <div class="cta">
       <a class="pill pill--solid" href="https://github.com/di-omics/bay-hack">View on GitHub</a>
       <a class="pill pill--ghost" href="#quickstart">Run the demo</a>
@@ -218,6 +218,7 @@ footer .f-links{display:flex;gap:22px;font-size:13px;flex-wrap:wrap;}
       <div class="stat"><b>800 uL</b><span>search volume saved</span></div>
       <div class="stat"><b>40</b><span>tips saved</span></div>
       <div class="stat"><b>ledger</b><span>trust receipt</span></div>
+      <div class="stat"><b>0</b><span>unsafe commands</span></div>
       <div class="stat"><b>0</b><span>deps to demo</span></div>
     </div>
   </div>
@@ -231,13 +232,14 @@ footer .f-links{display:flex;gap:22px;font-size:13px;flex-wrap:wrap;}
     <div class="sec-head">
       <p class="eyebrow">See it run</p>
       <h2 class="title">Every run is a real plate plan</h2>
-      <p class="lede">Two seed wells and four adaptive wells are all visible. Each has a destination, stock volume, diluent volume, fresh tips, physical gates, and measurement provenance. ACCEPT triggers a real follow-up plan to H12.</p>
+      <p class="lede">First, a reused-tip plan is refused with zero robot commands. Then two seed wells and four adaptive wells run visibly. Each has a destination, volumes, fresh tips, physical gates, objective status, uncertainty, and measurement provenance. ACCEPT triggers a follow-up plan to H12.</p>
     </div>
     <img src="demo.gif" alt="bay-hack DBTL loop demo" style="width:100%;border:1px solid var(--line);border-radius:16px;display:block">
     <img src="convergence.svg" alt="convergence: about 6 runs vs 26 for a grid sweep" style="width:100%;max-width:640px;margin-top:22px;border:1px solid var(--line);border-radius:14px;display:block">
     <pre class="term" style="margin-top:22px"><span class="c"># run it yourself -- zero dependencies</span>
 <span class="p">$</span> python -m bayhack.dashboard   <span class="c"># live browser demo</span>
-<span class="p">$</span> python -m bayhack.demo        <span class="c"># narrated CLI</span></pre>
+<span class="p">$</span> python -m bayhack.demo        <span class="c"># narrated CLI</span>
+<span class="p">$</span> python -m bayhack.safety      <span class="c"># zero-command refusal proof</span></pre>
   </div>
 </section>
 
@@ -266,9 +268,9 @@ footer .f-links{display:flex;gap:22px;font-size:13px;flex-wrap:wrap;}
         <span class="branch">└─ physical world</span><span class="arrow">→</span>
         <span class="node swap">Zeon scene + executor</span>
       </div>
-      <p class="loop-note">One model predicts scientific outcomes. One model tracks the physical bench. A measurement can update the next decision only after the physical gates pass.</p>
+      <p class="loop-note">One model predicts scientific outcomes. One model tracks the physical bench. A measurement can update the next decision only after the physical gates pass. ACCEPT also requires the declared objective and uncertainty criteria.</p>
 
-      <p class="thesis">Goal <span class="a">→</span> verified 40 uL plate plan <span class="a">→</span> scientific model chooses the next well <span class="a">→</span> Zeon's physical model executes in the live scene <span class="a">→</span> measurement + volume gate + CV <span class="a">→</span> conformal accept / escalate <span class="a">→</span> 20 uL follow-up to H12.</p>
+      <p class="thesis">Goal <span class="a">→</span> verify or refuse the 40 uL plate plan <span class="a">→</span> scientific model chooses the next well <span class="a">→</span> Zeon's physical model executes in the live scene <span class="a">→</span> measured camera or reader value + volume gate + CV <span class="a">→</span> objective + uncertainty accept / escalate <span class="a">→</span> 20 uL follow-up to H12.</p>
     </div>
   </div>
 </section>
@@ -308,6 +310,10 @@ footer .f-links{display:flex;gap:22px;font-size:13px;flex-wrap:wrap;}
         <p><span class="mod">lab-cv</span>: computer-vision checkpoints confirm each physical step happened.</p>
       </div>
       <div class="card">
+        <h3>Measure <span class="k">· venue neutral</span></h3>
+        <p><span class="mod">bayhack/measurements.py</span>: calibrated reader CSV or camera colorimetry produces source-specific evidence.</p>
+      </div>
+      <div class="card">
         <h3>Learn</h3>
         <p><span class="mod">ml-bio-eval</span>: split-conformal decides accept / reject / escalate before the loop repeats.</p>
       </div>
@@ -340,8 +346,10 @@ footer .f-links{display:flex;gap:22px;font-size:13px;flex-wrap:wrap;}
 
     <div class="term-wrap">
       <pre class="term"><span class="c"># stdlib only: six visible, verified plate plans</span>
-<span class="p">$</span> python -m bayhack.demo --ledger run_artifacts/trust.json</pre>
-      <p class="caption"><b>Zero runtime dependencies. CI green.</b> The trust receipt identifies every value as modeled, simulated, measured, or hardware-validated.</p>
+<span class="p">$</span> python -m bayhack.safety --output run_artifacts/refusal.json
+<span class="p">$</span> python -m bayhack.demo --ledger run_artifacts/trust.json
+<span class="p">$</span> python -m bayhack.dashboard --receipt run_artifacts/trust.json</pre>
+      <p class="caption"><b>Zero runtime dependencies. CI green.</b> The trust receipt identifies every value as modeled, simulated, measured, or hardware-validated. Receipt replay presents physical evidence without moving hardware again.</p>
       <div class="cta" style="margin-top:20px">
         <a class="pill pill--solid" href="https://github.com/di-omics/bay-hack">View on GitHub</a>
       </div>

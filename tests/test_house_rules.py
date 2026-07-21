@@ -41,6 +41,8 @@ def test_public_story_is_liquid_handling_first_and_complementary():
     ):
         assert phrase.lower() in (readme + site).lower()
     assert "trust layer a vision-first stack still needs" not in site.lower()
+    assert "Prove refusal" in readme
+    assert "MEASUREMENT_ADAPTERS.md" in readme
 
 
 def test_pitch_numbers_match_the_benchmark():

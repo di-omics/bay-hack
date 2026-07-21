@@ -1,5 +1,6 @@
 """Liquid-handling plans and trust receipts are part of the CI gate."""
 import json
+from dataclasses import replace
 
 from bayhack.assay import LiquidHandlingAssay
 from bayhack.loop import Bench, DBTLLoop
@@ -54,12 +55,33 @@ def test_trust_ledger_labels_modeled_measurements(tmp_path):
     assert payload["follow_up"]["execution"]["passed"]
 
 
+def test_trust_ledger_preserves_measurement_source_evidence():
+    bench = Bench()
+    bench.measurement_provenance = "measured:fixture"
+    bench.measurement_evidence = {"well": "fixture", "source": "test reader"}
+    loop = DBTLLoop(bench, budget=3)
+    loop.run(verbose=False)
+    measurement = loop.ledger.records[0].measurement
+    assert measurement["provenance"] == "measured:fixture"
+    assert measurement["evidence"]["source"] == "test reader"
+
+
 def test_invalid_sub_minimum_transfer_is_rejected():
     assay = LiquidHandlingAssay(total_volume_ul=40.0, min_transfer_ul=1.0)
     plan = assay.plan(run_id=1, phase="optimize", design_x=0.01)
     verdict = assay.verify(plan)
     assert not verdict["passed"]
     assert "below 1 uL" in verdict["reasons"][0]
+
+
+def test_transfer_destination_must_match_verified_plan():
+    assay = LiquidHandlingAssay()
+    plan = assay.plan(run_id=1, phase="safety-check", design_x=0.2)
+    bad_transfer = replace(plan.transfers[0], destination="C1")
+    unsafe = replace(plan, transfers=(bad_transfer, *plan.transfers[1:]))
+    verdict = assay.verify(unsafe)
+    assert not verdict["passed"]
+    assert any("destination does not match" in reason for reason in verdict["reasons"])
 
 
 def test_failed_physical_gate_never_updates_world_model():

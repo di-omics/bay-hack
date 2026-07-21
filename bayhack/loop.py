@@ -11,8 +11,11 @@ stdlib-only simulation so you can feel the whole loop tonight:
     python -m bayhack.loop
 
 The loop:  Design (world model proposes) -> Build/Test (MCP executes + reads)
-           -> Verify (Rhodamine gate + CV checkpoint) -> Learn (conformal gate
-           + surrogate update) -> repeat, until it recovers a planted optimum.
+           -> Verify (Rhodamine gate + CV checkpoint) -> Learn (objective plus
+           uncertainty gate + surrogate update) -> repeat, then follow up.
+
+The simulator exposes a planted optimum only to benchmark scoring. The
+controller stops without reading it.
 """
 from __future__ import annotations
 
@@ -182,17 +185,23 @@ class RoundLog:
     plan_verified: bool
     measurement_provenance: str
     model_updated: bool
+    uncertainty: float
+    target_signal: float
+    target_met: bool
+    conformal_decision: str
 
 
 class DBTLLoop:
     """Design-Build-Test-Learn, composed across the repos, with a QC gate."""
 
     def __init__(self, bench: Bench | None = None, tol: float = 0.03, budget: int = 20,
-                 rhodamine_fn=None, cv_fn=None, assay: LiquidHandlingAssay | None = None):
+                 rhodamine_fn=None, cv_fn=None, assay: LiquidHandlingAssay | None = None,
+                 target_signal: float = 0.85):
         self.bench = bench or Bench()
         self.wm = WorldModel()
         self.tol = tol
         self.budget = budget
+        self.target_signal = target_signal
         self.assay = assay or LiquidHandlingAssay()
         # SEAM hooks: default to the stdlib gates; bayhack.seams swaps in the real
         # tipseq_plr Rhodamine + SimVision gates. Both take the same call shape.
@@ -214,6 +223,13 @@ class DBTLLoop:
     @property
     def verification_provenance(self) -> str:
         return str(getattr(self.bench, "verification_provenance", "modeled"))
+
+    @property
+    def measurement_evidence(self) -> dict:
+        evidence = getattr(self.bench, "measurement_evidence", {})
+        return dict(evidence) if isinstance(evidence, dict) else {
+            "detail": str(evidence)
+        }
 
     def _run_plan(self, plan: LiquidHandlingPlan) -> float:
         runner = getattr(self.bench, "run_plan", None)
@@ -237,8 +253,14 @@ class DBTLLoop:
         if trustworthy:
             self.wm.observe(x, fluor)
         _, unc = self.wm.predict(x)
-        decision = conformal_gate(unc) if trustworthy else "ESCALATE"
         bx, by = self.wm.best() if self.wm.ys else (x, 0.0)
+        conformal_decision = conformal_gate(unc) if trustworthy else "ESCALATE"
+        target_met = trustworthy and by >= self.target_signal
+        decision = (
+            "ACCEPT"
+            if conformal_decision == "ACCEPT" and target_met
+            else "ESCALATE"
+        )
         record = RoundLog(
             k=run_id,
             phase=phase,
@@ -254,6 +276,10 @@ class DBTLLoop:
             plan_verified=True,
             measurement_provenance=self.measurement_provenance,
             model_updated=trustworthy,
+            uncertainty=unc,
+            target_signal=self.target_signal,
+            target_met=target_met,
+            conformal_decision=conformal_decision,
         )
         self.history.append(record)
         self.ledger.append_round(
@@ -262,6 +288,7 @@ class DBTLLoop:
             backend=self.backend_name,
             measurement_value=fluor,
             measurement_provenance=self.measurement_provenance,
+            measurement_evidence=self.measurement_evidence,
             rhodamine=rhod,
             cv=cv,
             verification_provenance=self.verification_provenance,
@@ -269,6 +296,10 @@ class DBTLLoop:
             best_x=bx,
             best_y=by,
             model_updated=trustworthy,
+            uncertainty=unc,
+            target_signal=self.target_signal,
+            target_met=target_met,
+            conformal_decision=conformal_decision,
         )
         return record
 
@@ -326,10 +357,7 @@ class DBTLLoop:
             if verbose:
                 self._print_round(record)
 
-            if (
-                abs(record.best_x - self.bench.x_star) <= self.tol
-                and record.decision == "ACCEPT"
-            ):
+            if record.decision == "ACCEPT":
                 self.runs_used = len(self.history)
                 self._stage_follow_up()
                 return self.history
@@ -344,5 +372,6 @@ class DBTLLoop:
             f"stock={record.stock_ul:5.1f}uL  diluent={record.diluent_ul:5.1f}uL  "
             f"x={record.x:.3f}  signal={record.fluor:.3f}  "
             f"Rhodamine R2={record.r2:.4f}  plan:PASS  "
+            f"target:{'PASS' if record.target_met else 'WAIT'}  "
             f"gate:{record.decision}  best x={record.best_x:.3f}"
         )
