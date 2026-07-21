@@ -5,7 +5,7 @@
 **Two world models close the liquid-handling loop.** Track A entry for the 24hr AI for Science
 World Models Hack @ Zeon Systems (Jul 25–26, SF).
 
-**Live site:** https://di-omics.github.io/bay-hack/ &middot; **Pitch slide:** [docs/slide.html](docs/slide.html) &middot; **Trust model:** [ACCEPTANCE.md](ACCEPTANCE.md) &middot; **Measurement adapters:** [MEASUREMENT_ADAPTERS.md](MEASUREMENT_ADAPTERS.md) &middot; **Bring kit:** [HARDWARE_KIT.md](HARDWARE_KIT.md) &middot; **On-site runbook:** [ONSITE_RUNBOOK.md](ONSITE_RUNBOOK.md)
+**Live site:** https://di-omics.github.io/bay-hack/ &middot; **Pitch slide:** [docs/slide.html](docs/slide.html) &middot; **Trust model:** [ACCEPTANCE.md](ACCEPTANCE.md) &middot; **Measurement adapters:** [MEASUREMENT_ADAPTERS.md](MEASUREMENT_ADAPTERS.md) &middot; **Physical gates:** [VERIFICATION_ADAPTERS.md](VERIFICATION_ADAPTERS.md) &middot; **Bring kit:** [HARDWARE_KIT.md](HARDWARE_KIT.md) &middot; **On-site runbook:** [ONSITE_RUNBOOK.md](ONSITE_RUNBOOK.md)
 
 ![bay-hack loop demo](docs/demo.gif)
 
@@ -37,6 +37,7 @@ python -m bayhack.demo        # narrated CLI run
 python -m bayhack.dashboard   # live browser dashboard -> http://127.0.0.1:8000
 python -m bayhack.demo --ledger run_artifacts/trust.json
 python -m bayhack.safety      # unsafe plan refused with zero robot commands
+python -m bayhack.preflight   # complete zero-motion readiness audit
 python -m bayhack.dashboard --receipt run_artifacts/trust.json  # zero-motion replay
 ```
 
@@ -96,6 +97,34 @@ python -m bayhack.measurements camera run_artifacts/plate_B1.jpg \
 `measured:reader-csv` and `measured:camera`. See
 [MEASUREMENT_ADAPTERS.md](MEASUREMENT_ADAPTERS.md) for calibration and wiring.
 
+## Earn physical validation from real evidence
+
+The loop no longer trusts a caller-supplied hardware label. It promotes a run to
+`hardware-validated` only when both shipped measured gates pass:
+
+```bash
+python -m bayhack.verification volume-csv run_artifacts/volume-gate.csv
+python -m bayhack.verification cv-json run_artifacts/cv_B1_1.json
+```
+
+`CsvVolumeGate` checks an independent standard curve plus replicated robot
+dispenses for R2, accuracy, and CV. `JsonCvCheckpoint` requires a named visual
+checkpoint, inspector, verdict, note, and traceable image or trace ID. Both
+preserve their evidence and source-file SHA-256 digests in the trust receipt,
+then fail closed on incomplete input. See
+[VERIFICATION_ADAPTERS.md](VERIFICATION_ADAPTERS.md).
+
+Before any venue backend is initialized, audit the complete fallback and every
+evidence file from one zero-motion command:
+
+```bash
+python -m bayhack.preflight --output run_artifacts/preflight.json
+```
+
+The default result is `SIMULATION_READY`. Once a measured reader or camera value,
+volume CSV, and CV checkpoint all pass, it becomes `PHYSICAL_EVIDENCE_READY`.
+It never homes or moves hardware, and always reports `ready_for_motion: false`.
+
 After a physical run, replay its measured receipt on the dashboard without
 moving hardware again:
 
@@ -150,6 +179,7 @@ actual code, **verified to run with no instrument**:
   `liquid_tested`/`biovalidated` until real Rhodamine data clears the gate.
 - A device value is labeled measured, not hardware-validated, until the physical
   volume and CV gates also pass.
+- A manual `hardware-validated` string cannot bypass the measured gates.
 
 ## What composes into what
 

@@ -80,13 +80,15 @@ autonomous labs."
 
 ## Priority order before the event
 
-1. Keep the six-run simulator and dashboard green.
+1. Keep `python -m bayhack.preflight`, the six-run simulator, and dashboard green.
 2. Rehearse camera colorimetry with food dye and the exact plate map.
-3. Confirm venue liquid handler, tips, reader, wavelengths, and chemical policy.
-4. Record one complete physical fallback run at home if possible.
-5. Rehearse the pitch with the plate in hand.
-6. On-site, connect one real measurement before attempting extra robotics.
-7. Freeze the path by Saturday evening and record it before robots stop.
+3. Rehearse the measured volume CSV and CV JSON formats with fixture files.
+4. Confirm venue liquid handler, tips, reader, wavelengths, and chemical policy.
+5. Record one complete physical fallback run at home if possible.
+6. Rehearse the pitch with the plate in hand.
+7. On-site, connect one real measurement before attempting extra robotics.
+8. Earn `hardware-validated` from both measured gates before adding flourishes.
+9. Freeze the path by Saturday evening and record it before robots stop.
 
 ## What not to build
 

@@ -19,7 +19,7 @@ from .ledger import TrustLedger, TrustRecord
 # ZeonArmBackend`), never here -- so `import bayhack` never attempts to load
 # pylabrobot/plr_lr (repository rule: keep the sim path dependency-free).
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __all__ = [
     "WorldModel", "Bench", "DBTLLoop", "RoundLog",
     "rhodamine_gate", "cv_checkpoint", "conformal_gate",

@@ -29,6 +29,7 @@ No modeled value may be described as measured.
 | Build / Test | concrete stock and diluent transfers execute before the read | abstract optimization with no bench plan | implemented in stdlib and `plr-mcp` chatterbox |
 | Volume verification | linearity R2 >= 0.995 plus the stricter `tipseq_plr` accuracy and CV criteria when that seam is installed | trusting a bad dispense | gate implementation exercised on synthetic fixtures, physical data owed on-site |
 | Step verification | camera checkpoint reports success | spill, missed move, missing pellet, or bad plate pose | simulated checkpoint, physical camera owed on-site |
+| Evidence promotion | both measured volume and measured CV gates must pass before the ledger says `hardware-validated` | a caller promoting fixture data by changing a string | implemented and tested |
 | Learn | only physically trustworthy reads update the model; ACCEPT requires signal >= 0.85 and uncertainty clearance | low-quality or overconfident acceptance | implemented without hidden ground truth and tested |
 | Follow-up | accepted well sends 20 uL to reserved product well H12 with a fresh tip | loop stops at measurement and does not act on the result | implemented and tested |
 | Physical world | Zeon workflow runs in simulation first and preserves safe state transitions | collision, stale scene, bad pose | adapter shape runs in simulation, venue API owed on-site |
@@ -42,6 +43,10 @@ No modeled value may be described as measured.
 - About 800 uL and 40 tips saved in the search phase at 40 uL per experiment
 - Machine-readable trust receipt with explicit modeled measurement provenance
 - Reader CSV and camera-image adapters with calibrated, source-specific provenance
+- Real volume-CSV and CV-JSON adapters with automatic evidence promotion
+- SHA-256 digests tying measured source files to each recorded verdict
+- Zero-motion preflight report for simulator, refusal, benchmark, optional seams,
+  physical evidence files, and safe receipt replay
 - Unsafe-plan refusal receipt proving zero commands before recovery
 - Verified 20 uL follow-up transfer to H12
 - Real `plr-mcp`, `tipseq_plr`, `labworld`, and `plr_lr` adapters that load lazily
@@ -64,6 +69,8 @@ label from modeled or simulated to measured or hardware-validated.
 python -m bayhack.demo --ledger run_artifacts/trust.json
 python -m bayhack.safety --output run_artifacts/refusal.json
 python -m bayhack.measurements --help
+python -m bayhack.verification --help
+python -m bayhack.preflight --output run_artifacts/preflight.json
 python -m bayhack.dashboard
 python -m bayhack.benchmark
 pytest -q

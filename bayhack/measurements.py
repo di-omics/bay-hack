@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import math
 from dataclasses import asdict, dataclass
@@ -25,6 +26,15 @@ from .assay import ROWS, LiquidHandlingPlan, is_well_name
 
 class MeasurementError(RuntimeError):
     """A physical measurement could not be parsed or calibrated safely."""
+
+
+def file_sha256(path: str | Path) -> str:
+    """Return the SHA-256 digest of one source evidence file."""
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def parse_well(well: str) -> tuple[int, int]:
@@ -247,6 +257,7 @@ class CsvWellMeasurement:
             normalized = self.calibration.normalize(raw_value)
             self.last_evidence = {
                 "path": str(self.path),
+                "sha256": file_sha256(self.path),
                 "well": normalized_well,
                 "raw_value": raw_value,
                 "normalized_value": normalized,
@@ -259,6 +270,7 @@ class CsvWellMeasurement:
             )
         self.last_evidence = {
             "path": str(self.path),
+            "sha256": file_sha256(self.path),
             "well": normalized_well,
             "raw_value": raw_value,
             "normalized_value": raw_value,
@@ -301,6 +313,7 @@ class CameraWellMeasurement:
         value = project_color_signal(sample_rgb, low_rgb, high_rgb)
         self.last_evidence = {
             "path": str(path),
+            "sha256": file_sha256(path),
             "well": str(well).upper(),
             "low_reference": {
                 "well": self.calibration.low_well,

@@ -56,22 +56,26 @@ Recruit line:
 
 ## Build order
 
-1. Run `pytest -q` and `python -m bayhack.demo` unchanged.
-2. Run the dashboard and keep it open as the guaranteed demo.
-3. Calibrate one plate pose and one safe transfer, not an entire workcell.
-4. Select a shipped adapter from `MEASUREMENT_ADAPTERS.md` and connect one real
+1. Run `python -m bayhack.preflight` and keep the JSON report.
+2. Run `pytest -q` and `python -m bayhack.demo` unchanged.
+3. Run the dashboard and keep it open as the guaranteed demo.
+4. Calibrate one plate pose and one safe transfer, not an entire workcell.
+5. Select a shipped adapter from `MEASUREMENT_ADAPTERS.md` and connect one real
    measurement to the ledger.
-5. Execute one full round with plan verification and a human confirmation gate.
-6. Repeat until the scientific model selects an accepted well.
-7. Execute the 20 uL follow-up transfer to H12.
-8. Record the successful physical run immediately.
-9. Restart the dashboard with `--receipt run_artifacts/trust.json` for a safe
+6. Qualify the dispense method with `CsvVolumeGate` and one real visual
+   checkpoint with `JsonCvCheckpoint`. Follow `VERIFICATION_ADAPTERS.md`.
+7. Execute one full round with plan verification and a human confirmation gate.
+8. Repeat until the scientific model selects an accepted well.
+9. Execute the 20 uL follow-up transfer to H12.
+10. Record the successful physical run immediately.
+11. Restart the dashboard with `--receipt run_artifacts/trust.json` for a safe
    stage replay that never moves hardware.
-10. Only then add the Zeon backend flourish, arm motion, or extra UI.
+12. Only then add the Zeon backend flourish, arm motion, or extra UI.
 
 ## Two-minute safety rehearsal
 
 ```bash
+python -m bayhack.preflight --output run_artifacts/preflight.json
 python -m bayhack.safety --output run_artifacts/refusal.json
 python -m bayhack.dashboard
 ```

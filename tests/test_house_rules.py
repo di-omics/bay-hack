@@ -43,6 +43,9 @@ def test_public_story_is_liquid_handling_first_and_complementary():
     assert "trust layer a vision-first stack still needs" not in site.lower()
     assert "Prove refusal" in readme
     assert "MEASUREMENT_ADAPTERS.md" in readme
+    assert "VERIFICATION_ADAPTERS.md" in readme
+    assert "python -m bayhack.preflight" in readme
+    assert "manual `hardware-validated` string cannot bypass" in readme
 
 
 def test_pitch_numbers_match_the_benchmark():

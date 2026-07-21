@@ -19,6 +19,10 @@ jobs:
         run: python -m bayhack.safety --output run_artifacts/refusal.json
       - name: Measurement adapter CLI must stay available
         run: python -m bayhack.measurements --help
+      - name: Physical verification adapters must stay available
+        run: python -m bayhack.verification --help
+      - name: Zero-motion readiness audit must pass
+        run: python -m bayhack.preflight --output run_artifacts/preflight.json
       - name: Tests
         run: pytest -q
       - name: Benchmark claims must stay reproducible
