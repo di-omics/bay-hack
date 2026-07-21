@@ -83,9 +83,9 @@ python -m bayhack.measurements overlay \
   run_artifacts/camera-overlay.png
 ```
 
-The camera evidence records the image path, target-well RGB, A2 low-reference
+The camera evidence records the image path and SHA-256 digest, target-well RGB, A2 low-reference
 RGB, A1 high-reference RGB, plate geometry, and normalized value. Reader CSV
-evidence records the source path, raw RFU, calibration, and normalized value.
+evidence records the source path and digest, raw RFU, calibration, and normalized value.
 
 Wire the image pattern into the bench:
 
@@ -110,33 +110,36 @@ pip install pillow
 
 ## Physical validation
 
-Only set `verification_provenance="hardware-validated"` after a real standard
-curve and real camera checkpoint clear the declared criteria:
+Do not set a hardware-validation label by hand. Use the shipped measured gates:
 
 ```python
+from bayhack.verification import CsvVolumeGate, JsonCvCheckpoint
+
 bench = PlrMcpBench(
     backend="VENUE_BACKEND",
     measurement_fn=measurement,
-    verification_provenance="hardware-validated",
 )
 loop = DBTLLoop(
     bench,
-    rhodamine_fn=real_volume_gate,
-    cv_fn=real_camera_gate,
+    rhodamine_fn=CsvVolumeGate("run_artifacts/volume-gate.csv"),
+    cv_fn=JsonCvCheckpoint("run_artifacts/cv_{well}_{run_id}.json"),
     target_signal=0.85,
 )
 ```
 
-Keep the default `synthetic_fixture` label until those two real gates exist.
+The loop earns `hardware-validated` only after both measured gates pass. See
+[VERIFICATION_ADAPTERS.md](VERIFICATION_ADAPTERS.md) for exact file formats,
+criteria, fail-closed behavior, and the zero-motion preflight command.
 
 ## Dry-run checklist
 
-1. `python -m bayhack.safety` shows zero robot commands for an invalid plan.
-2. The adapter CLI returns a finite value between 0 and 1.
-3. The ledger says `measured:reader-csv` or `measured:camera`.
-4. A failed physical gate leaves `world_model.updated` false.
-5. ACCEPT requires both the 0.85 objective threshold and uncertainty clearance.
-6. The follow-up transfer to H12 uses the same verified backend path.
+1. `python -m bayhack.preflight` reports `SIMULATION_READY` and zero motion.
+2. `python -m bayhack.safety` shows zero robot commands for an invalid plan.
+3. The adapter CLI returns a finite value between 0 and 1.
+4. The ledger says `measured:reader-csv` or `measured:camera`.
+5. A failed physical gate leaves `world_model.updated` false.
+6. ACCEPT requires both the 0.85 objective threshold and uncertainty clearance.
+7. The follow-up transfer to H12 uses the same verified backend path.
 
 ## Stage-safe replay
 

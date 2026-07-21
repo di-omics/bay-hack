@@ -27,6 +27,8 @@ Pipeline:
 9. Use the shipped CSV or camera measurement adapter before writing a new one.
 10. ACCEPT requires both the assay objective and uncertainty clearance.
 11. Preserve `python -m bayhack.safety` as a zero-command refusal proof.
+12. Use `CsvVolumeGate` and `JsonCvCheckpoint`. Never promote physical evidence
+    by setting a label manually.
 
 ## Supporting seams
 
@@ -39,9 +41,28 @@ Pipeline:
 - Plan: `tipseq_plr.sow`
 - Physical world: Zeon's Python workflow or skill executor
 
+When the repositories are sibling checkouts, their expected paths are:
+
+- `../plr-mcp`
+- `../plr-epigenome`
+- `../plr-lab-robot`
+- `../ml-bio-eval/lab-world-model`
+
+Do not hard-code an absolute home-directory path. Discover the current repo root
+with `git rev-parse --show-toplevel` and verify each sibling before using it.
+
+On-site evidence belongs under ignored `run_artifacts/`:
+
+- `reader.csv` or `plate_{well}.jpg`
+- `camera-calibration.json`
+- `volume-gate.csv`
+- `cv_{well}_{run_id}.json`
+- `trust.json`, `refusal.json`, and `preflight.json`
+
 ## Before every commit
 
 ```bash
+python -m bayhack.preflight
 python -m bayhack.demo
 python -m bayhack.safety
 python -m bayhack.benchmark

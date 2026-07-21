@@ -13,7 +13,7 @@ Each experiment mixes 40 uL in a destination well. The accepted well then sends
 - Two clear, flat-bottom, 96-well plates with lids, ideally 360 uL wells
 - One extra plate as a sealed fallback plate for the walk-around showcase
 - One P20 or P200 manual pipette as a rescue path, if you own a calibrated one
-- At least 24 compatible manual tips in a clean rack
+- At least 48 compatible manual tips in clean racks
 - Six 1.5 mL tubes and two 15 mL tubes
 - DI water in a sealed, labeled tube or bottle
 - Food-grade dye in a sealed, labeled tube for the camera-color fallback
@@ -22,7 +22,9 @@ Each experiment mixes 40 uL in a destination well. The accepted well then sends
 - Printed QR code for the repo and live site
 
 The working run uses 12 tips for six formulations and one more tip for the
-follow-up transfer. Bring at least 24 so a recovery run does not become a crisis.
+follow-up transfer. The volume qualification uses at least six more robot
+dispenses plus independently prepared standards. Bring at least 48 so one full
+qualification, one assay run, and one recovery do not become a crisis.
 
 ## Only bring these after the host confirms compatibility
 
@@ -41,6 +43,10 @@ SDS, clear labels, and secondary containment. Follow the venue's PPE and waste
 rules. Do not bring live cells, clinical samples, biohazards, or unlabeled liquids.
 
 ## Plate map
+
+Use one plate for the assay below and a second plate for the independent volume
+standards and replicated dispense test. Keep the third plate sealed as the
+walk-around fallback.
 
 | Position | Purpose | Suggested starting load |
 |---|---|---:|
@@ -74,9 +80,19 @@ measurement, trust receipt, and follow-up remain real.
 
 ## Before leaving home
 
+- Run `python -m bayhack.preflight --output run_artifacts/preflight.json`
 - Run `python -m bayhack.demo --ledger run_artifacts/trust.json`
 - Run `python -m bayhack.dashboard` and load it once with Wi-Fi disabled
 - Save a screen recording of the full simulated run
 - Confirm the source plate, tips, camera, and HDMI adapter fit in one bag
 - Photograph the packed kit and the plate map
 
+## Files to collect on-site
+
+- `reader.csv` or one calibrated plate image per destination well
+- `volume-gate.csv` with independent standards and replicated robot dispenses
+- `cv_{well}_{run_id}.json` plus its image or venue trace ID
+- `trust.json` from the completed physical loop
+- `refusal.json` and `preflight.json` from the zero-motion checks
+
+See `MEASUREMENT_ADAPTERS.md` and `VERIFICATION_ADAPTERS.md` for exact formats.

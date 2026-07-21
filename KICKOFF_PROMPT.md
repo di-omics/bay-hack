@@ -1,13 +1,14 @@
 # On-site coding prompt
 
 Work inside the `bay-hack` repository. Read `HOUSE_RULES.md`, `STRATEGY.md`,
-`ACCEPTANCE.md`, `HARDWARE_KIT.md`, `ONSITE_RUNBOOK.md`, and `CLAUDE.md` first.
+`ACCEPTANCE.md`, `HARDWARE_KIT.md`, `MEASUREMENT_ADAPTERS.md`,
+`VERIFICATION_ADAPTERS.md`, `ONSITE_RUNBOOK.md`, and `CLAUDE.md` first.
 
 ## Orient before editing
 
 1. Run `git status -sb` and `git log -5 --oneline`.
-2. Run `python -m bayhack.demo`, `python -m bayhack.safety`,
-   `python -m bayhack.benchmark`, and `pytest -q`.
+2. Run `python -m bayhack.preflight`, `python -m bayhack.demo`,
+   `python -m bayhack.safety`, `python -m bayhack.benchmark`, and `pytest -q`.
 3. Inspect `bayhack/assay.py`, `bayhack/loop.py`, `bayhack/seams.py`, and
    `bayhack/zeon_bridge.py`.
 4. Print the current evidence labels: modeled, simulated execution, measured,
@@ -30,17 +31,20 @@ Preserve the stdlib simulation as the guaranteed fallback.
    `CameraWellMeasurement` from `bayhack/measurements.py`. Connect one physical
    value and confirm its source-specific provenance in the ledger. Do not build
    another controller.
-2. **Execution seam:** map the verified `LiquidHandlingPlan.transfers` onto the
+2. **Physical evidence:** use `CsvVolumeGate` and `JsonCvCheckpoint` from
+   `bayhack/verification.py`. Do not set `hardware-validated` manually. Confirm
+   the loop earns it only after both measured gates pass.
+3. **Execution seam:** map the verified `LiquidHandlingPlan.transfers` onto the
    venue liquid handler or Zeon pipetting workflow. Use each plan's unique tip.
-3. **Physical world seam:** map the enumerated `ZeonArmBackend` actions to the
+4. **Physical world seam:** map the enumerated `ZeonArmBackend` actions to the
    Python skill, workflow, or executor API supplied by Zeon. Do not guess names.
-4. **Follow-up:** execute the accepted-well transfer to H12 through the same
+5. **Follow-up:** execute the accepted-well transfer to H12 through the same
    hardware path and record it in the ledger.
-5. **Evidence:** save one successful trust receipt and one refusal receipt.
+6. **Evidence:** save one successful trust receipt and one refusal receipt.
    Use `python -m bayhack.safety` before testing any venue-specific fault path.
-6. **Demo:** update only the minimum UI needed to show measured provenance and
+7. **Demo:** update only the minimum UI needed to show measured provenance and
    the successful follow-up.
-7. **Safe replay:** present the final physical receipt with
+8. **Safe replay:** present the final physical receipt with
    `python -m bayhack.dashboard --receipt PATH`. Do not rerun hardware for the
    stage presentation unless the operator deliberately chooses a live run.
 
@@ -52,6 +56,7 @@ Preserve the stdlib simulation as the guaranteed fallback.
 - Never reuse a wet tip. The simulator may return tips to rack positions, but
   the physical path must use waste or guaranteed fresh positions.
 - Never label modeled data as measured.
+- Never label a run hardware-validated unless both shipped measured gates pass.
 - Never train the scientific model on a failed volume or CV gate.
 - Never accept a formulation unless it clears both the declared objective and
   uncertainty criteria.

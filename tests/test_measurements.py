@@ -54,6 +54,7 @@ def test_csv_adapter_reads_the_planned_well(tmp_path):
     assert adapter.provenance == "measured:reader-csv"
     assert adapter.last_evidence["well"] == "B1"
     assert adapter.last_evidence["raw_value"] == 600.0
+    assert len(adapter.last_evidence["sha256"]) == 64
 
 
 def test_uncalibrated_raw_reader_values_are_refused(tmp_path):
@@ -93,6 +94,7 @@ def test_camera_adapter_reads_synthetic_plate_fixture(tmp_path):
     assert adapter.last_evidence["well"] == "B1"
     assert adapter.last_evidence["low_reference"]["well"] == "A2"
     assert adapter.last_evidence["high_reference"]["well"] == "A1"
+    assert len(adapter.last_evidence["sha256"]) == 64
     overlay = render_calibration_overlay(
         path, calibration, tmp_path / "calibration-overlay.png"
     )

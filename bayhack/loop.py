@@ -19,6 +19,7 @@ controller stops without reading it.
 """
 from __future__ import annotations
 
+import inspect
 import math
 import random
 from dataclasses import dataclass, field
@@ -231,6 +232,37 @@ class DBTLLoop:
             "detail": str(evidence)
         }
 
+    @staticmethod
+    def _gate_call(function, *args, plan: LiquidHandlingPlan) -> dict:
+        """Pass plan context to new adapters without breaking old gate callables."""
+        try:
+            parameters = inspect.signature(function).parameters.values()
+            accepts_plan = any(
+                parameter.name == "plan"
+                or parameter.kind == inspect.Parameter.VAR_KEYWORD
+                for parameter in parameters
+            )
+        except (TypeError, ValueError):
+            accepts_plan = False
+        result = function(*args, plan=plan) if accepts_plan else function(*args)
+        if not isinstance(result, dict) or "passed" not in result:
+            raise ValueError("physical gate must return a dict with passed")
+        return result
+
+    def _physical_verification_provenance(self, rhodamine: dict, cv: dict) -> str:
+        """Promote evidence only when both measured physical gates exist."""
+        labels = [str(rhodamine.get("provenance", "")),
+                  str(cv.get("provenance", ""))]
+        measured = [label.startswith("measured:") for label in labels]
+        if all(measured):
+            if rhodamine["passed"] and cv["passed"]:
+                return "hardware-validated"
+            return "measured:failed-physical-gates"
+        if any(measured):
+            return "measured:partial-physical-gates"
+        fallback = self.verification_provenance
+        return "unverified" if fallback == "hardware-validated" else fallback
+
     def _run_plan(self, plan: LiquidHandlingPlan) -> float:
         runner = getattr(self.bench, "run_plan", None)
         if callable(runner):
@@ -247,8 +279,12 @@ class DBTLLoop:
             )
 
         fluor = self._run_plan(plan)
-        rhod = self.rhodamine_fn(self.bench.rhodamine_series())
-        cv = self.cv_fn(fault=False)
+        rhod = self._gate_call(
+            self.rhodamine_fn,
+            self.bench.rhodamine_series(),
+            plan=plan,
+        )
+        cv = self._gate_call(self.cv_fn, False, plan=plan)
         trustworthy = rhod["passed"] and cv["passed"]
         if trustworthy:
             self.wm.observe(x, fluor)
@@ -291,7 +327,9 @@ class DBTLLoop:
             measurement_evidence=self.measurement_evidence,
             rhodamine=rhod,
             cv=cv,
-            verification_provenance=self.verification_provenance,
+            verification_provenance=self._physical_verification_provenance(
+                rhod, cv
+            ),
             decision=decision,
             best_x=bx,
             best_y=by,
