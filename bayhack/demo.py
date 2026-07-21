@@ -3,8 +3,8 @@
     python -m bayhack.demo
 
 Narrates one Track-A run: a world model proposes experiments, an agent executes
-them (MCP seam), Rhodamine + CV verify them physically, a conformal gate decides,
-and it recovers a planted optimum in far fewer runs than a grid sweep.
+them (MCP seam), Rhodamine + CV verify them physically, and the assay objective
+plus uncertainty gate decide when the accepted result moves downstream.
 """
 from __future__ import annotations
 
@@ -112,7 +112,7 @@ def main():
     print("  Design  -> ml-bio-eval/lab-world-model (GP + ParEGO)")
     print("  Execute -> plr-mcp (plr_transfer, plr_read_plate)")
     print("  Verify  -> plr-epigenome validation/rhodamine.py + lab-cv")
-    print("  Learn   -> ml-bio-eval split-conformal accept/escalate gate")
+    print("  Learn   -> assay objective + ml-bio-eval split-conformal uncertainty")
     print("Swap them in on your machine, then swap the arm backend for")
     print("ZeonArmBackend (zeon_bridge.py) to drive Zeon's platform.")
 

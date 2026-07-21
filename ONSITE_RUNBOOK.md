@@ -59,12 +59,26 @@ Recruit line:
 1. Run `pytest -q` and `python -m bayhack.demo` unchanged.
 2. Run the dashboard and keep it open as the guaranteed demo.
 3. Calibrate one plate pose and one safe transfer, not an entire workcell.
-4. Connect one real measurement to the ledger.
+4. Select a shipped adapter from `MEASUREMENT_ADAPTERS.md` and connect one real
+   measurement to the ledger.
 5. Execute one full round with plan verification and a human confirmation gate.
 6. Repeat until the scientific model selects an accepted well.
 7. Execute the 20 uL follow-up transfer to H12.
 8. Record the successful physical run immediately.
-9. Only then add the Zeon backend flourish, arm motion, or extra UI.
+9. Restart the dashboard with `--receipt run_artifacts/trust.json` for a safe
+   stage replay that never moves hardware.
+10. Only then add the Zeon backend flourish, arm motion, or extra UI.
+
+## Two-minute safety rehearsal
+
+```bash
+python -m bayhack.safety --output run_artifacts/refusal.json
+python -m bayhack.dashboard
+```
+
+On the dashboard, click **Prove refusal** first. Say: "The invalid tip assignment
+never reached the robot, never became a measurement, and never trained the
+scientific model." Then click **Run the loop** to show recovery and follow-up.
 
 ## Hard stop rules
 
@@ -101,4 +115,3 @@ Robots stop at midnight, so do not postpone physical recording.
 5. **Proof:** show the Rhodamine or colorimetric gate and the trust receipt.
 6. **Follow-up:** move 20 uL from the accepted well to H12.
 7. **Close:** two world models, one physically verified scientific loop.
-

@@ -37,11 +37,14 @@ def test_measurement_callback_marks_value_as_measured():
 
     def camera_measurement(plan, _reader_result):
         return plan.design_x * 0.9
+    camera_measurement.provenance = "measured:camera"
+    camera_measurement.last_evidence = {"well": "B1", "source": "camera"}
 
     b = PlrMcpBench(quiet=True, measurement_fn=camera_measurement)
     value = b.run_plan(LiquidHandlingAssay().plan(1, "seed", 0.2))
     assert value == pytest.approx(0.18)
-    assert b.measurement_provenance == "measured"
+    assert b.measurement_provenance == "measured:camera"
+    assert b.measurement_evidence == {"well": "B1", "source": "camera"}
 
 
 def test_rhodamine_gate_real_reaches_liquid_tested():

@@ -52,6 +52,7 @@ class PlrMcpBench:
         backend: str = "chatterbox",
         quiet: bool = True,
         measurement_fn=None,
+        verification_provenance: str = "synthetic_fixture",
     ):
         self.model = model or Bench()
         self.backend = backend
@@ -60,9 +61,14 @@ class PlrMcpBench:
         self._shown = False
         self._lab_instance = None
         self._setup_done = False
+        self.measurement_evidence: dict = {}
         self.backend_name = f"plr-mcp:{backend}"
-        self.measurement_provenance = "measured" if measurement_fn else "modeled"
-        self.verification_provenance = "synthetic_fixture"
+        self.measurement_provenance = (
+            str(getattr(measurement_fn, "provenance", "measured"))
+            if measurement_fn
+            else "modeled"
+        )
+        self.verification_provenance = verification_provenance
 
     # keep the loop's convergence check + Rhodamine ladder working
     @property
@@ -159,7 +165,12 @@ class PlrMcpBench:
             readout = _run(self._choreograph_plan(plan))
             self._shown = True
         if self.measurement_fn is not None:
-            return float(self.measurement_fn(plan, readout))
+            value = float(self.measurement_fn(plan, readout))
+            evidence = getattr(self.measurement_fn, "last_evidence", {})
+            self.measurement_evidence = (
+                dict(evidence) if isinstance(evidence, dict) else {}
+            )
+            return value
         return self.model.run_plan(plan)
 
     async def _choreograph_follow_up(self, action: FollowUpAction) -> None:

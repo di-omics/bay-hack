@@ -14,9 +14,18 @@ import argparse
 import json
 import random
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
 from .loop import DBTLLoop, Bench
+from .safety import FAULTS, run_refusal
+
+
+RECEIPT_PATH: Path | None = None
+
+
+class ReceiptReplayError(RuntimeError):
+    """A saved trust receipt cannot be presented safely."""
 
 
 def run_loop(seed: int = 7, budget: int = 20) -> dict:
@@ -24,11 +33,16 @@ def run_loop(seed: int = 7, budget: int = 20) -> dict:
     hist = loop.run(verbose=False)
     bx, by = loop.wm.best()
     return {
+        "mode": "simulation",
         "x_star": round(loop.bench.x_star, 4),
         "runs_used": loop.runs_used,
         "grid": 26,
-        "converged": abs(bx - loop.bench.x_star) <= loop.tol,
+        "converged": bool(
+            loop.follow_up is not None
+            and abs(bx - loop.bench.x_star) <= loop.tol
+        ),
         "best_x": round(bx, 4), "best_y": round(by, 4),
+        "target_signal": loop.target_signal,
         "rounds": [{"k": r.k, "phase": r.phase, "well": r.destination,
                     "stock_ul": r.stock_ul, "diluent_ul": r.diluent_ul,
                     "x": round(r.x, 4), "fluor": round(r.fluor, 4),
@@ -36,10 +50,97 @@ def run_loop(seed: int = 7, budget: int = 20) -> dict:
                     "plan_verified": r.plan_verified,
                     "measurement_provenance": r.measurement_provenance,
                     "model_updated": r.model_updated,
+                    "uncertainty": round(r.uncertainty, 4),
+                    "target_signal": r.target_signal,
+                    "target_met": r.target_met,
+                    "conformal_decision": r.conformal_decision,
                     "best_x": round(r.best_x, 4), "best_y": round(r.best_y, 4)}
                    for r in hist],
         "follow_up": loop.follow_up,
         "ledger": loop.ledger.to_dict(),
+    }
+
+
+def replay_receipt(path: str | Path) -> dict:
+    """Convert a saved trust receipt into dashboard data without bench motion."""
+    source = Path(path)
+    try:
+        payload = json.loads(source.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ReceiptReplayError(f"cannot read trust receipt: {source}") from exc
+    records = payload.get("records")
+    if not isinstance(records, list) or not records:
+        raise ReceiptReplayError("trust receipt contains no experiment records")
+
+    rounds = []
+    for record in records:
+        try:
+            plan = record["plan"]
+            measurement = record["measurement"]
+            physical = record["physical_verification"]
+            model = record["world_model"]
+        except (KeyError, TypeError) as exc:
+            raise ReceiptReplayError("trust receipt record is missing required fields") from exc
+        acceptance = record.get("acceptance", {})
+        best_x = model.get("best_x")
+        best_y = model.get("best_y")
+        rounds.append({
+            "k": record["run_id"],
+            "phase": record["phase"],
+            "well": plan["destination"],
+            "stock_ul": float(plan["stock_ul"]),
+            "diluent_ul": float(plan["diluent_ul"]),
+            "x": round(float(plan["design_x"]), 4),
+            "fluor": round(float(measurement["value"]), 4),
+            "r2": round(float(physical.get("rhodamine", {}).get("r2", 0.0)), 4),
+            "decision": record["decision"],
+            "plan_verified": bool(record["plan_verification"]["passed"]),
+            "measurement_provenance": str(measurement["provenance"]),
+            "model_updated": bool(model["updated"]),
+            "uncertainty": round(float(acceptance.get("uncertainty", 0.0)), 4),
+            "target_signal": float(acceptance.get("target_signal", 0.85)),
+            "target_met": bool(acceptance.get("target_met", False)),
+            "conformal_decision": str(
+                acceptance.get("conformal_decision", record["decision"])
+            ),
+            "best_x": round(float(best_x if best_x is not None else plan["design_x"]), 4),
+            "best_y": round(float(best_y if best_y is not None else measurement["value"]), 4),
+        })
+
+    trusted_rounds = [
+        round_data
+        for round_data, record in zip(rounds, records)
+        if record.get("world_model", {}).get("updated")
+    ]
+    best_round = max(trusted_rounds or rounds, key=lambda item: item["fluor"])
+    final = records[-1]
+    final_acceptance = final.get("acceptance", {})
+    final_model = final.get("world_model", {})
+    best_x = final_model.get("best_x")
+    best_y = final_model.get("best_y")
+    ledger_follow_up = payload.get("follow_up")
+    follow_up = None
+    follow_up_passed = False
+    if isinstance(ledger_follow_up, dict):
+        execution = ledger_follow_up.get("execution", {})
+        follow_up_passed = bool(execution.get("passed"))
+        follow_up = {
+            "action": ledger_follow_up.get("action", {}),
+            "verification": ledger_follow_up.get("verification", {}),
+            "executed": follow_up_passed,
+        }
+    return {
+        "mode": "receipt-replay",
+        "x_star": None,
+        "runs_used": len(rounds),
+        "grid": 26,
+        "converged": final.get("decision") == "ACCEPT" and follow_up_passed,
+        "best_x": round(float(best_x if best_x is not None else best_round["x"]), 4),
+        "best_y": round(float(best_y if best_y is not None else best_round["fluor"]), 4),
+        "target_signal": float(final_acceptance.get("target_signal", 0.85)),
+        "rounds": rounds,
+        "follow_up": follow_up,
+        "ledger": payload,
     }
 
 
@@ -71,11 +172,15 @@ h1 .lite{font-weight:200;color:var(--matcha-deep);}
 .run{font-family:var(--sans);font-weight:800;font-size:13px;letter-spacing:.08em;text-transform:uppercase;
   border:none;border-radius:999px;cursor:pointer;background:var(--matcha);color:#fff;padding:11px 26px;}
 .run:hover{background:var(--matcha-deep);}
+.refuse{font-family:var(--sans);font-weight:800;font-size:13px;letter-spacing:.06em;text-transform:uppercase;
+  border:1.5px solid #d7897e;border-radius:999px;cursor:pointer;background:#fff;color:var(--bad);padding:9px 20px;}
+.refuse:hover{background:#fff5f3;}
 .seed{font-family:var(--mono);font-size:13px;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:9px 12px;width:120px;}
 .seed:focus{outline:2px solid var(--matcha);}
 .muted{color:var(--muted);font-size:13px;font-weight:500;}
 .banner{display:block;border-radius:14px;padding:14px 18px;margin:22px 0;
   border:1px solid var(--line);background:var(--wash);font-weight:800;color:var(--matcha-deep);}
+.banner.refused{background:#fff5f3;border-color:#efc7c1;color:var(--bad);}
 .banner .headline{display:flex;align-items:center;gap:11px;}
 .banner-stats{display:flex;flex-wrap:wrap;gap:22px;margin:12px 0 0 22px;}
 .banner .dot{width:11px;height:11px;border-radius:50%;background:var(--matcha);flex:0 0 auto;}
@@ -119,6 +224,7 @@ svg.vesica{width:56px;height:36px;fill:none;stroke:var(--matcha);stroke-width:1.
 .receipt .proof{border:1px solid var(--line);border-radius:999px;background:var(--wash);padding:8px 12px;
   color:var(--matcha-deep);font-family:var(--mono);font-size:11px;font-weight:600;}
 .receipt .proof.modeled{color:#7c6727;background:#fffaf0;border-color:#e7d9aa;}
+.receipt .proof.blocked{color:var(--bad);background:#fff5f3;border-color:#efc7c1;}
 </style>
 </head>
 <body>
@@ -144,6 +250,7 @@ svg.vesica{width:56px;height:36px;fill:none;stroke:var(--matcha);stroke-width:1.
 
   <div class="controls">
     <button class="run" id="run">&#9654; Run the loop</button>
+    <button class="refuse" id="refuse">Prove refusal</button>
     <label class="muted">seed <input class="seed" id="seed" type="number" value="7"></label>
     <span class="muted" id="status"></span>
   </div>
@@ -157,7 +264,7 @@ svg.vesica{width:56px;height:36px;fill:none;stroke:var(--matcha);stroke-width:1.
       <span class="node accent">scientific model<small>choose next well</small></span><span class="arrow">&rarr;</span>
       <span class="node">Build / Test<small>plr-mcp</small></span><span class="arrow">&rarr;</span>
       <span class="node">Verify<small>rhodamine + cv</small></span><span class="arrow">&rarr;</span>
-      <span class="node">Learn<small>conformal</small></span><span class="arrow">&rarr;</span>
+      <span class="node">Learn<small>objective + uncertainty</small></span><span class="arrow">&rarr;</span>
       <span class="node">Follow up<small>20 uL to H12</small></span><span class="arrow">&#8634;</span>
       <span class="node swap">Zeon physical model<small>scene + executor</small></span>
     </div>
@@ -183,7 +290,7 @@ svg.vesica{width:56px;height:36px;fill:none;stroke:var(--matcha);stroke-width:1.
   </div>
 
   <div class="card">
-    <h2>Trust receipt &middot; accepted run</h2>
+    <h2>Trust receipt &middot; current decision</h2>
     <p class="note">Plan, execution, measurement provenance, physical gates, model update, and follow-up remain inspectable.</p>
     <div class="receipt" id="receipt"></div>
   </div>
@@ -219,15 +326,25 @@ async function run(){
   const seed=$('#seed').value||7;
   $('#status').textContent='running the loop...';
   const d=await (await fetch('/api/run?seed='+seed)).json();
-  $('#status').textContent='';
+  if(d.error){ $('#status').textContent=d.error; return; }
+  const replay=d.mode==='receipt-replay';
+  $('#run').textContent=replay?'↻ Reload receipt':'▶ Run the loop';
+  $('#seed').disabled=replay;
+  $('#seed').closest('label').style.display=replay?'none':'';
+  $('#status').textContent=replay?'safe receipt replay · zero hardware commands':'';
   // banner
   const b=$('#banner');
+  b.className='banner';
   if(d.converged){
     const f=d.follow_up.action;
-    b.innerHTML=`<div class="headline"><span class="dot"></span><span>Recovered optimum x*&asymp;${d.x_star.toFixed(2)} at x=${d.best_x.toFixed(3)} (signal ${d.best_y.toFixed(3)}) in ${d.runs_used} runs, vs ~${d.grid} for a grid sweep. Follow-up: ${f.volume_ul}uL ${f.source} &rarr; ${f.destination}, verified.</span></div>
-      <div class="banner-stats"><span class="stat"><b>${d.runs_used}</b><span>runs</span></span><span class="stat"><b>800uL</b><span>search volume saved</span></span><span class="stat"><b>MODELED</b><span>signal provenance</span></span><span class="stat"><b>ACCEPT</b><span>conformal gate</span></span></div>`;
+    const headline=replay
+      ? `Replayed accepted receipt: x=${d.best_x.toFixed(3)}, signal ${d.best_y.toFixed(3)}, ${d.runs_used} trusted runs. Follow-up: ${f.volume_ul}uL ${f.source} &rarr; ${f.destination}, verified.`
+      : `Recovered optimum x*&asymp;${d.x_star.toFixed(2)} at x=${d.best_x.toFixed(3)} (signal ${d.best_y.toFixed(3)}) in ${d.runs_used} runs, vs ~${d.grid} for a grid sweep. Follow-up: ${f.volume_ul}uL ${f.source} &rarr; ${f.destination}, verified.`;
+    b.innerHTML=`<div class="headline"><span class="dot"></span><span>${headline}</span></div>
+      <div class="banner-stats"><span class="stat"><b>${d.runs_used}</b><span>runs</span></span><span class="stat"><b>800uL</b><span>search volume saved</span></span><span class="stat"><b>${d.rounds.at(-1).measurement_provenance.toUpperCase()}</b><span>signal provenance</span></span><span class="stat"><b>&ge;${d.target_signal.toFixed(2)}</b><span>objective threshold</span></span></div>`;
   } else {
-    b.innerHTML=`<span class="dot" style="background:var(--bad)"></span>best x=${d.best_x.toFixed(3)} (target ${d.x_star.toFixed(2)}) after ${d.runs_used} runs.`;
+    const target=d.x_star===null?`objective &ge;${d.target_signal.toFixed(2)}`:`target ${d.x_star.toFixed(2)}`;
+    b.innerHTML=`<span class="dot" style="background:var(--bad)"></span>best x=${d.best_x.toFixed(3)} (${target}) after ${d.runs_used} runs.`;
   }
   // wells
   $('#wells').innerHTML=d.rounds.map((r,i)=>{
@@ -249,12 +366,37 @@ async function run(){
     ['MEASURE '+accepted.measurement.provenance.toUpperCase(), true],
     ['VOLUME GATE '+accepted.physical_verification.provenance.toUpperCase(), accepted.physical_verification.rhodamine.passed],
     ['CV '+accepted.physical_verification.provenance.toUpperCase(), accepted.physical_verification.cv.passed],
+    ['OBJECTIVE ≥'+accepted.acceptance.target_signal.toFixed(2), accepted.acceptance.target_met],
+    ['UNCERTAINTY '+accepted.acceptance.uncertainty.toFixed(3), accepted.acceptance.conformal_decision==='ACCEPT'],
     ['MODEL UPDATED', accepted.world_model.updated],
     ['FOLLOW-UP '+d.ledger.follow_up.execution.backend.toUpperCase(), d.ledger.follow_up.execution.passed],
   ];
   $('#receipt').innerHTML=proofs.map(([label,ok])=>`<span class="proof${label.includes('MODELED')?' modeled':''}">${ok?'&#10003;':'!'} ${label}</span>`).join('');
 }
+async function refuse(){
+  $('#status').textContent='injecting an invalid tip assignment...';
+  const d=await (await fetch('/api/refusal?kind=tip_reuse')).json();
+  $('#status').textContent='unsafe plan blocked before motion';
+  const b=$('#banner');
+  b.className='banner refused';
+  b.innerHTML=`<div class="headline"><span>REFUSED BEFORE ACT: ${d.plan_verification.reasons.join('; ')}.</span></div>
+    <div class="banner-stats"><span class="stat"><b>${d.execution.commands_issued}</b><span>robot commands</span></span><span class="stat"><b>NO</b><span>measurement taken</span></span><span class="stat"><b>NO</b><span>model update</span></span><span class="stat"><b>PASS</b><span>recovery plan</span></span></div>`;
+  const p=d.unsafe_plan;
+  $('#wells').innerHTML=`<div class="col"><div class="sw" style="background:#fff5f3;border-color:#d7897e" title="unsafe plan refused"></div><div class="n">REFUSED</div></div>`;
+  $('#chart').innerHTML='<p class="note">No measurement entered the scientific model.</p>';
+  $('#tbl tbody').innerHTML=`<tr><td class="lab">R1 safety-check</td><td>${p.destination}</td><td>${p.stock_ul.toFixed(1)}uL</td><td>${p.diluent_ul.toFixed(1)}uL</td><td>not taken</td><td>BLOCKED</td><td style="color:var(--bad);font-weight:800">REFUSED</td></tr>`;
+  const proofs=[
+    'PLAN REFUSED',
+    'ROBOT COMMANDS 0',
+    'MEASUREMENT NOT TAKEN',
+    'MODEL NOT UPDATED',
+    'FOLLOW-UP BLOCKED',
+    'RECOVERY PLAN PASS',
+  ];
+  $('#receipt').innerHTML=proofs.map(label=>`<span class="proof blocked">&#10003; ${label}</span>`).join('');
+}
 $('#run').addEventListener('click',run);
+$('#refuse').addEventListener('click',refuse);
 run();
 </script>
 </body>
@@ -279,7 +421,21 @@ class Handler(BaseHTTPRequestHandler):
                 seed = int(q.get("seed", ["7"])[0])
             except ValueError:
                 seed = 7
-            body = json.dumps(run_loop(seed)).encode()
+            try:
+                data = replay_receipt(RECEIPT_PATH) if RECEIPT_PATH else run_loop(seed)
+                self._send(200, json.dumps(data).encode(), "application/json")
+            except ReceiptReplayError as exc:
+                self._send(
+                    500,
+                    json.dumps({"error": str(exc)}).encode(),
+                    "application/json",
+                )
+        elif u.path == "/api/refusal":
+            q = parse_qs(u.query)
+            kind = q.get("kind", ["tip_reuse"])[0]
+            if kind not in FAULTS:
+                kind = "tip_reuse"
+            body = json.dumps(run_refusal(kind)).encode()
             self._send(200, body, "application/json")
         else:
             self._send(404, b"not found", "text/plain")
@@ -289,12 +445,21 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
+    global RECEIPT_PATH
     ap = argparse.ArgumentParser(description="bay-hack live demo dashboard")
     ap.add_argument("--port", type=int, default=8000)
     ap.add_argument("--host", default="127.0.0.1")
+    ap.add_argument(
+        "--receipt",
+        help="replay a saved trust receipt without issuing hardware commands",
+    )
     args = ap.parse_args()
+    if args.receipt:
+        RECEIPT_PATH = Path(args.receipt)
+        replay_receipt(RECEIPT_PATH)
     srv = ThreadingHTTPServer((args.host, args.port), Handler)
-    print(f"bay-hack dashboard -> http://{args.host}:{args.port}  (Ctrl-C to stop)")
+    mode = f"receipt replay: {RECEIPT_PATH}" if RECEIPT_PATH else "simulation"
+    print(f"bay-hack dashboard -> http://{args.host}:{args.port}  ({mode}; Ctrl-C to stop)")
     try:
         srv.serve_forever()
     except KeyboardInterrupt:

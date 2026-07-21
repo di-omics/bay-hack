@@ -25,6 +25,8 @@ LINE = (230, 239, 232)
 WASH = (242, 248, 243)
 LOWSIG = (238, 242, 251)
 DYE = (47, 111, 214)
+BAD = (178, 58, 46)
+BAD_WASH = (255, 245, 243)
 
 
 def font(size, bold=False):
@@ -108,11 +110,17 @@ def frame(rounds, upto, x_star, runs_used, grid, final=False):
         d.text((78, by + 13), msg, font=F_BANNER, fill=DEEP)
     else:
         r = rounds[upto - 1] if upto else None
-        txt = (f"{r.phase} {r.well}:  {r.stock_ul:.1f} uL stock + "
-               f"{r.diluent_ul:.1f} uL diluent   signal={r.fluor:.3f}   "
-               f"gate: {r.decision}") if r else \
-            "scientific model proposing the next physical experiment..."
-        d.text((40, by + 13), txt, font=F_SUB, fill=MUTED)
+        if r:
+            txt = (f"{r.phase} {r.well}:  {r.stock_ul:.1f} uL stock + "
+                   f"{r.diluent_ul:.1f} uL diluent   signal={r.fluor:.3f}   "
+                   f"gate: {r.decision}")
+            d.text((40, by + 13), txt, font=F_SUB, fill=MUTED)
+        else:
+            d.rounded_rectangle((40, by, W - 40, by + 44), radius=12,
+                                fill=BAD_WASH, outline=BAD, width=1)
+            d.text((56, by + 13),
+                   "REFUSED: reused tip  |  0 robot commands  |  recovery PASS",
+                   font=F_BANNER, fill=BAD)
     return img
 
 
@@ -126,7 +134,7 @@ def main():
         frames.append(frame(rounds, f, d["x_star"], d["runs_used"], d["grid"]))
     final = frame(rounds, len(rounds), d["x_star"], d["runs_used"], d["grid"], final=True)
     frames += [final] * 3  # hold the payoff
-    durations = [700] + [650] * len(rounds) + [1500, 1500, 1500]
+    durations = [1500] + [650] * len(rounds) + [1500, 1500, 1500]
     out = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                        "docs", "demo.gif")
     frames[0].save(out, save_all=True, append_images=frames[1:], duration=durations,
