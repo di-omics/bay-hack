@@ -8,6 +8,8 @@ def test_world_model_beats_the_grid():
     assert r["avg_runs"] < r["grid"]             # fewer runs than a grid sweep
     assert r["speedup_vs_grid"] > 1
     assert r["avg_x_error"] < 0.03               # lands on the optimum
+    assert r["reaction_volume_saved_ul"] > 0
+    assert r["tips_saved"] > 0
 
 
 def test_convergence_svg_is_well_formed():

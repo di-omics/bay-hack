@@ -1,4 +1,4 @@
-"""Smoke tests — the CI gate. Deterministic, stdlib-only, fast."""
+"""Smoke tests: the CI gate. Deterministic, stdlib-only, fast."""
 from bayhack import (
     DBTLLoop, Bench, WorldModel, rhodamine_gate, cv_checkpoint, conformal_gate,
 )

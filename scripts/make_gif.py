@@ -66,7 +66,7 @@ def frame(rounds, upto, x_star, runs_used, grid, final=False):
     d = ImageDraw.Draw(img)
     # header
     d.text((40, 26), "bay-hack", font=F_TITLE, fill=DEEP)
-    d.text((40, 66), "a world model runs the bench", font=F_SUB, fill=INK)
+    d.text((40, 66), "two world models close the liquid-handling loop", font=F_SUB, fill=INK)
     d.line((40, 100, W - 40, 100), fill=LINE, width=1)
 
     # proposed experiments (wells reveal one per frame)
@@ -78,8 +78,9 @@ def frame(rounds, upto, x_star, runs_used, grid, final=False):
             r.best_y == max(rounds[j].best_y for j in range(upto))
         d.rounded_rectangle((x, y0, x + sz, y0 + sz), radius=8, fill=dye(r.fluor),
                             outline=MATCHA if best else LINE, width=3 if best else 1)
-        d.text((x + sz / 2 - d.textlength(str(r.k), font=F_NUM) / 2, y0 + sz + 5),
-               str(r.k), font=F_NUM, fill=MUTED)
+        well = r.well
+        d.text((x + sz / 2 - d.textlength(well, font=F_NUM) / 2, y0 + sz + 5),
+               well, font=F_NUM, fill=MUTED)
 
     # convergence mini-chart
     label(d, (40, 214), "CONVERGENCE  (best-so-far)", F_LABEL, DEEP, spacing=2)
@@ -103,14 +104,14 @@ def frame(rounds, upto, x_star, runs_used, grid, final=False):
     if final:
         d.rounded_rectangle((40, by, W - 40, by + 44), radius=12, fill=WASH, outline=MATCHA, width=1)
         d.ellipse((56, by + 17, 66, by + 27), fill=MATCHA)
-        msg = f"Recovered the optimum in {runs_used} runs  vs ~{grid} grid    -    " \
-              f"conformal gate: ACCEPT"
+        msg = f"ACCEPT in {runs_used} runs vs ~{grid} grid  |  follow-up: 20 uL to H12"
         d.text((78, by + 13), msg, font=F_BANNER, fill=DEEP)
     else:
         r = rounds[upto - 1] if upto else None
-        txt = (f"round {r.k}:  propose x={r.x:.3f}   fluor={r.fluor:.3f}   "
-               f"Rhodamine R2={r.r2:.3f} PASS   gate: {r.decision}") if r else \
-            "world model proposing the next experiment..."
+        txt = (f"{r.phase} {r.well}:  {r.stock_ul:.1f} uL stock + "
+               f"{r.diluent_ul:.1f} uL diluent   signal={r.fluor:.3f}   "
+               f"gate: {r.decision}") if r else \
+            "scientific model proposing the next physical experiment..."
         d.text((40, by + 13), txt, font=F_SUB, fill=MUTED)
     return img
 

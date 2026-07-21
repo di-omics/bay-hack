@@ -19,6 +19,7 @@ import contextlib
 import io
 
 from .loop import Bench
+from .assay import FollowUpAction, LiquidHandlingPlan
 
 
 class SeamUnavailable(RuntimeError):
@@ -45,12 +46,23 @@ class PlrMcpBench:
     reader, and the same loop reads real signal.
     """
 
-    def __init__(self, model: Bench | None = None, backend: str = "chatterbox",
-                 quiet: bool = True):
+    def __init__(
+        self,
+        model: Bench | None = None,
+        backend: str = "chatterbox",
+        quiet: bool = True,
+        measurement_fn=None,
+    ):
         self.model = model or Bench()
         self.backend = backend
         self.quiet = quiet
+        self.measurement_fn = measurement_fn
         self._shown = False
+        self._lab_instance = None
+        self._setup_done = False
+        self.backend_name = f"plr-mcp:{backend}"
+        self.measurement_provenance = "measured" if measurement_fn else "modeled"
+        self.verification_provenance = "synthetic_fixture"
 
     # keep the loop's convergence check + Rhodamine ladder working
     @property
@@ -61,16 +73,52 @@ class PlrMcpBench:
         return self.model.rhodamine_series()
 
     def _lab(self):
+        if self._lab_instance is not None:
+            return self._lab_instance
         try:
             from plr_mcp.lab import Lab
         except ImportError as e:                       # pragma: no cover
             raise SeamUnavailable(
                 "plr-mcp not installed: pip install -e ../plr-mcp") from e
-        return Lab(backend=self.backend)
+        self._lab_instance = Lab(backend=self.backend)
+        return self._lab_instance
+
+    async def _ensure_setup(self) -> None:
+        if self._setup_done:
+            return
+        if self.backend != "chatterbox":
+            raise SeamUnavailable(
+                "real hardware is not prepared; call prepare_hardware(confirm=True) "
+                "with a clear deck and an E-stop owner"
+            )
+        result = await self._lab().setup_deck()
+        if not result.get("ok"):
+            raise SeamUnavailable(f"deck setup failed: {result}")
+        self._setup_done = True
+
+    def prepare_hardware(self, *, confirm: bool = False) -> dict:
+        """Deliberate motion gate for a real liquid handler.
+
+        This is never called by the simulator or by DBTLLoop. The operator must
+        clear the deck, identify the E-stop owner, and pass confirm=True.
+        """
+        if self.backend == "chatterbox":
+            result = _run(self._lab().setup_deck())
+            self._setup_done = bool(result.get("ok"))
+            return result
+        if not confirm:
+            raise SeamUnavailable(
+                "refusing to home real hardware without confirm=True"
+            )
+        result = _run(self._lab().setup_deck(home=True))
+        self._setup_done = bool(result.get("ok") and result.get("homed"))
+        if not self._setup_done:
+            raise SeamUnavailable(f"hardware preparation failed: {result}")
+        return result
 
     async def _choreograph(self, x: float) -> None:
         lab = self._lab()
-        await lab.setup_deck()
+        await self._ensure_setup()
         vol = max(1.0, 50.0 * x)
         await lab.pick_up_tips("A1")
         await lab.aspirate("A1", volume=vol)
@@ -87,6 +135,48 @@ class PlrMcpBench:
             _run(self._choreograph(x))
             self._shown = True
         return self.model.run_design(x)               # signal modeled (reader=0)
+
+    async def _choreograph_plan(self, plan: LiquidHandlingPlan) -> dict:
+        lab = self._lab()
+        await self._ensure_setup()
+        for transfer in plan.transfers:
+            await lab.transfer(
+                transfer.source,
+                transfer.destination,
+                volume=transfer.volume_ul,
+                tips=transfer.tip,
+            )
+        return await lab.read_plate(
+            mode="fluorescence", excitation=485, emission=520
+        )
+
+    def run_plan(self, plan: LiquidHandlingPlan) -> float:
+        """Run the concrete two-component formulation through PyLabRobot."""
+        if self.quiet and self._shown:
+            with contextlib.redirect_stdout(io.StringIO()):
+                readout = _run(self._choreograph_plan(plan))
+        else:
+            readout = _run(self._choreograph_plan(plan))
+            self._shown = True
+        if self.measurement_fn is not None:
+            return float(self.measurement_fn(plan, readout))
+        return self.model.run_plan(plan)
+
+    async def _choreograph_follow_up(self, action: FollowUpAction) -> None:
+        lab = self._lab()
+        await self._ensure_setup()
+        await lab.transfer(
+            action.source,
+            action.destination,
+            volume=action.volume_ul,
+            tips=action.tip,
+        )
+
+    def run_follow_up(self, action: FollowUpAction) -> bool:
+        with contextlib.redirect_stdout(io.StringIO()):
+            _run(self._choreograph_follow_up(action))
+        self.model.run_follow_up(action)
+        return True
 
 
 # ─────────────────────────────────────────────────────────────────────────────

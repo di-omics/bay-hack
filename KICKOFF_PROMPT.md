@@ -1,81 +1,70 @@
-# KICKOFF_PROMPT.md — paste into Claude Code (inside `bay-hack/`)
+# On-site coding prompt
 
-Prereqs so CC can wire + push: have your repos available locally as siblings
-(e.g. `../plr-mcp`, `../plr-lab-robot`, `../plr-epigenome`, `../ml-bio-eval`),
-be signed in with `gh auth login`, and (optional) `export ANTHROPIC_API_KEY=…`.
+Work inside the `bay-hack` repository. Read `HOUSE_RULES.md`, `STRATEGY.md`,
+`ACCEPTANCE.md`, `HARDWARE_KIT.md`, `ONSITE_RUNBOOK.md`, and `CLAUDE.md` first.
 
----
+## Orient before editing
 
-You are my build partner on **bay-hack**, the Track-A integration repo for the
-AI for Science World Models Hack. The job is to **compose my existing @di-omics
-repos** into one closed loop and bridge it to Zeon — not to reimplement anything.
+1. Run `git status -sb` and `git log -5 --oneline`.
+2. Run `python -m bayhack.demo`, `python -m bayhack.benchmark`, and `pytest -q`.
+3. Inspect `bayhack/assay.py`, `bayhack/loop.py`, `bayhack/seams.py`, and
+   `bayhack/zeon_bridge.py`.
+4. Print the current evidence labels: modeled, simulated execution, measured,
+   and hardware-validated.
+5. Restate the two-world-model architecture and the exact on-site seam to wire.
 
-**Orient first (before code):**
-1. Read `STRATEGY.md`, `CLAUDE.md`, and `bayhack/loop.py`.
-2. Run `python -m bayhack.demo` and `pytest -q`; confirm both green.
-3. Restate in 5 bullets: the loop stages, which of my repos fills each SEAM, the
-   golden rules, and the Zeon-bridge plan.
+Do not edit until the baseline is green.
 
-**Golden rules (never violate):**
-- Compose, don't reimplement — import `plr_mcp`, `plr_lr`, `tipseq_plr`, and the
-  `ml-bio-eval` components; replace the stdlib stand-ins in `bayhack/loop.py`.
-- Keep `python -m bayhack.demo` + `pytest -q` GREEN at all times (the pure-sim
-  path must run with no hardware and no heavy deps; lazy-import the real modules).
-- Physically-trustworthy reads (Rhodamine + CV pass) train the world model; the
-  conformal gate only decides accept/escalate.
-- The Zeon bridge is upside, not a dependency.
+## Goal
 
-**Git workflow — every step, automatically:**
-- If no `origin`: `gh repo create bay-hack --public --source=. --remote=origin --push`
-  (if `gh` is unavailable, stop and ask me for the URL).
-- Per step: branch `feat/<name>`, implement, run demo + tests, and only if green
-  → conventional commit → push → merge to `main`. Keep `main` green and pushed.
-  After each step print: what changed, demo/test status, commit hash, branch.
+Make one complete Track A run physically real:
 
-**Build order (push after each green step):**
+**plan -> pipette -> measure -> verify -> learn -> follow up**
 
-0. **Wire deps.** Add `plr-mcp`, `plr-lab-robot`, `plr-epigenome`, and the
-   `ml-bio-eval` components as optional/dev dependencies (editable installs from
-   the sibling repos). Keep them out of the core sim import path.
+Preserve the stdlib simulation as the guaranteed fallback.
 
-1. **Execute seam → plr-mcp.** Replace `bayhack/loop.py`'s `Bench.run_design`
-   and `rhodamine_series` with real calls: `plr_setup_deck` (chatterbox), then
-   `plr_transfer`/`plr_aspirate`/`plr_dispense` to build the reaction, then
-   `plr_read_plate(mode="fluorescence")`. Import `plr_mcp.lab.Lab` for
-   programmatic use. Keep a `--sim` flag that falls back to the stdlib Bench.
+## Priority order
 
-2. **Verify seam → Rhodamine + CV.** Replace `rhodamine_gate` with
-   `tipseq_plr.validation.rhodamine` and wire a `steps/vision.py` `SimVision`
-   checkpoint into the loop. The loop must refuse to trust a read that fails
-   either gate.
+1. **Measurement seam:** connect one camera or plate-reader value. Change its
+   ledger provenance from `modeled` to `measured`. Add a test fixture that keeps
+   CI hardware-free.
+2. **Execution seam:** map the verified `LiquidHandlingPlan.transfers` onto the
+   venue liquid handler or Zeon pipetting workflow. Use each plan's unique tip.
+3. **Physical world seam:** map the enumerated `ZeonArmBackend` actions to the
+   Python skill, workflow, or executor API supplied by Zeon. Do not guess names.
+4. **Follow-up:** execute the accepted-well transfer to H12 through the same
+   hardware path and record it in the ledger.
+5. **Evidence:** save one successful trust receipt and one failed-gate receipt.
+6. **Demo:** update only the minimum UI needed to show measured provenance and
+   the successful follow-up.
 
-3. **Design + Learn seams → ml-bio-eval.** Replace `WorldModel` with the
-   `lab-world-model` GP + ParEGO acquisition, and `conformal_gate` with the
-   split-conformal accept/reject/escalate gate. Preserve plant-and-recover
-   scoring (report runs-to-recover vs a grid baseline).
+## Safety and correctness rules
 
-4. **Plan seam → sow.** Add an entrypoint that takes an English goal, runs
-   `tipseq_plr.sow` to compile it (with its validation tier), and feeds the
-   compiled design space into the loop.
+- Never run a physical action before `LiquidHandlingPlan.verify()` passes.
+- Never home or move hardware without a clear deck, E-stop owner, and explicit
+  human confirmation.
+- Never reuse a wet tip. The simulator may return tips to rack positions, but
+  the physical path must use waste or guaranteed fresh positions.
+- Never label modeled data as measured.
+- Never train the scientific model on a failed volume or CV gate.
+- Never make venue hardware a dependency of `python -m bayhack.demo`.
 
-5. **Dexterity beat → plr_lr.** Add a `Workcell.sim()` step that moves the plate
-   to the reader and performs a `vision_guided_pick` + `DecapSkill` uncap,
-   logged as a physical-verification checkpoint. (Track C bonus.)
+## Git workflow
 
-6. **Demo surface.** A single-file dashboard/CLI: goal ▸ world-model proposal ▸
-   MCP execution ▸ fluorescence + Rhodamine/CV gates ▸ convergence curve ▸ the
-   backend-swap-to-Zeon beat. Runs on the pure-sim path with zero hardware.
+- Confirm `git config user.name` is `di-omics` before committing.
+- Follow `HOUSE_RULES.md`.
+- Use factual Conventional Commit subjects.
+- Run tests, demo, and benchmark before every commit.
+- Push only green commits.
+- Do not rewrite public history.
 
-7. **Zeon bridge shape.** Flesh out `bayhack/zeon_bridge.py::ZeonArmBackend` to
-   match the arm backend interface `plr_lr` targets (setup/home/move/gripper),
-   with clear TODOs for the on-site SDK. Add a `--arm zeon` switch that would
-   route the same loop through it. Do NOT block the demo on it.
+## Final report
 
-**Also expose the MCP beat:** document how to run my `plr-mcp` server and have an
-agent (Claude) drive the loop over MCP — that's the "Physical MCP" pitch moment.
+Return:
 
-**Final report:** repo URL + latest `main` hash, how to run the demo, how to run
-it against real chatterbox PLR, and exactly what's left for on-site (ZeonArm SDK,
-camera calibration, hardware confirms).
-
-Start with step 0. Confirm your 5-bullet plan first, then go.
+- GitHub commit hash
+- Exact hardware and measurement adapters wired
+- Exact evidence label shown in the ledger
+- Demo command
+- Trust receipt path
+- Remaining fallback or safety limitations

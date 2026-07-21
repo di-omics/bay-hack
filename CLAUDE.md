@@ -1,45 +1,48 @@
-# CLAUDE.md — working in bay-hack
+# Repository build rules
 
-Context for Claude Code. Read before editing.
+Read `HOUSE_RULES.md` before editing.
 
-## What this is
-The **integration/glue** repo for a hackathon Track-A demo. It composes the
-@di-omics stack into one closed loop and bridges it to Zeon. It is NOT a place
-to reimplement lab-automation primitives — those already exist and are better
-than anything written from scratch here.
+## Architecture
 
-Pipeline: `sow` (plan) → world model (design) → `plr-mcp` (build/test) →
-Rhodamine + CV (verify) → conformal gate (learn) → repeat → Zeon bridge.
+bay-hack couples two world models:
+
+- Zeon's physical world model handles geometry, labware, state, and execution.
+- bay-hack's scientific world model predicts assay response and selects the next
+  liquid-handling experiment.
+
+Pipeline:
+
+`goal -> verified plate plan -> execute -> measure -> physical gates -> learn -> follow-up`
 
 ## Golden rules
-1. **Compose, don't reimplement.** Prefer importing the real repos
-   (`plr_mcp`, `plr_lr`, `tipseq_plr`, `ml-bio-eval` components) over writing new
-   logic. Each stage in `bayhack/loop.py` is a SEAM naming the real module.
-2. **Simulation-first.** `python -m bayhack.demo` must always run and converge
-   with zero hardware and zero heavy deps (stdlib stand-ins are the fallback).
-   Never make the sim path import pylabrobot/mcp/etc. at module load — lazy
-   import inside the swap.
-3. **Keep the demo + tests green** before every commit (`python -m bayhack.demo`,
-   `pytest -q`).
-4. **Trust before promote.** Physically-trustworthy measurements (Rhodamine +
-   CV pass) train the world model; the conformal gate decides accept/escalate.
-   Don't let the model learn from unverified reads.
-5. **The Zeon bridge is upside, not a dependency.** Everything must still demo
-   on the pure-PLR path if Zeon exposes no SDK.
 
-## Swapping seams (the real work)
-- Design → `ml-bio-eval/lab-world-model` (GP surrogate + ParEGO acquisition).
-- Execute → `plr_mcp.lab.Lab` for programmatic calls, and/or the `plr-mcp`
-  server for the "agent drives it over MCP" demo beat. Chatterbox backend first;
-  `star`/`ot2`/`evo` only with hardware and human-gated `confirm=true`.
-- Move/dexterity → `plr_lr` `Workcell.sim()`, `vision_guided_pick`, `DecapSkill`.
-- Verify → `tipseq_plr.validation.rhodamine` (R²≥0.995 gate) + `steps/vision.py`
-  (`SimVision` now, `LabCvVision` on-site).
-- Learn → `ml-bio-eval` split-conformal accept/reject/escalate gate.
-- Plan → `tipseq_plr.sow` (`sow plan --text` / `sow run --text`).
-- Bridge → implement `bayhack/zeon_bridge.py::ZeonArmBackend` against Zeon's SDK.
+1. Compose the existing `di-omics` repos. Do not rebuild their primitives here.
+2. Keep `python -m bayhack.demo` dependency-free and green.
+3. Gate seed runs exactly like optimization runs.
+4. Verify every physical plan before execution.
+5. Train only on physically trustworthy measurements.
+6. Label measurement provenance honestly.
+7. Keep venue hardware behind lazy adapters.
+8. Treat the Zeon integration as upside, not a fallback dependency.
 
-## Do NOT
-- Do not add heavy deps to the sim path.
-- Do not remove the stdlib fallback or the `--sim` demo.
-- Do not drive real hardware without the repos' existing human-gated confirms.
+## Supporting seams
+
+- Design: `ml-bio-eval/lab-world-model`
+- Execute: `plr_mcp.lab.Lab` and the `plr-mcp` server
+- Move: `plr_lr.Workcell`
+- Volume gate: `tipseq_plr.validation`
+- Vision gate: `tipseq_plr.steps.vision` and `lab-cv`
+- Learn: `labworld.ConformalQCGate`
+- Plan: `tipseq_plr.sow`
+- Physical world: Zeon's Python workflow or skill executor
+
+## Before every commit
+
+```bash
+python -m bayhack.demo
+python -m bayhack.benchmark
+pytest -q
+```
+
+Confirm the author is `di-omics`, the working tree contains no secrets, and the
+commit subject describes only the product change.

@@ -3,15 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>bay-hack · a world model runs the bench</title>
-<meta name="description" content="A world model runs the bench. A GP world model proposes the next experiment, an agent runs it on a sim-first liquid handler through plr-mcp, and a Rhodamine-B gate verifies the volumes physically before a conformal QC gate decides accept or escalate. Track-A entry, AI for Science World Models Hack @ Zeon Systems.">
+<title>bay-hack · two world models close the liquid-handling loop</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%235cae5a'/%3E%3Cpath d='M28 50h44' stroke='white' stroke-width='12' stroke-linecap='round'/%3E%3C/svg%3E">
+<meta name="description" content="Two world models close the liquid-handling loop: scientific optimization plus physically verified robotic execution. Track A entry for the AI for Science World Models Hack at Zeon Systems.">
 
-<!-- 1) FONTS (from house-style kit — verbatim) -->
+<!-- 1) FONTS (from house-style kit: verbatim) -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;500;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 
-<!-- 2) STYLE (from house-style kit — verbatim) -->
+<!-- 2) STYLE (from house-style kit: verbatim) -->
 <style>
 :root{
   --matcha:#5cae5a; --matcha-deep:#3c8446; --ink:#28372a;
@@ -51,7 +52,7 @@ svg.vesica{width:74px;height:48px;fill:none;stroke:var(--matcha);stroke-width:1.
 hr.rule{border:none;border-top:1px solid var(--line);margin:0;}
 </style>
 
-<!-- SUPPLEMENT — layout only. Same CONTRAST RULE: text uses --ink / --matcha-deep / --muted;
+<!-- SUPPLEMENT: layout only. Same CONTRAST RULE: text uses --ink / --matcha-deep / --muted;
      bright --matcha is graphics only (borders, arrows, dashed strokes, node fills). -->
 <style>
 .wrap{max-width:1080px;margin:0 auto;padding:0 24px;}
@@ -161,7 +162,7 @@ footer .f-links{display:flex;gap:22px;font-size:13px;flex-wrap:wrap;}
 </head>
 <body>
 
-<!-- 3) LIQUID-HANDLING SVG SPRITE (from house-style kit — verbatim, placed once) -->
+<!-- 3) LIQUID-HANDLING SVG SPRITE (from house-style kit: verbatim, placed once) -->
 <svg id="lh-sprite" width="0" height="0" style="position:absolute" aria-hidden="true">
  <symbol id="lh-plate" viewBox="0 0 32 32"><rect x="4" y="7" width="24" height="18" rx="2.5"/>
   <circle cx="9" cy="12" r="1.3"/><circle cx="14" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/><circle cx="24" cy="12" r="1.3"/>
@@ -204,19 +205,19 @@ footer .f-links{display:flex;gap:22px;font-size:13px;flex-wrap:wrap;}
       <svg class="charm"><use href="#lh-target"/></svg>
     </div>
     <p class="eyebrow">24hr AI for Science · World Models Hack @ Zeon Systems</p>
-    <h1 class="title xl">bay-hack<span class="lite">a world model runs the bench</span></h1>
-    <p class="lede">A plain-English goal goes in; the next pipetting run comes out. A <b>GP world model</b> proposes the next experiment, an agent executes it on a real (sim-first) liquid handler through <b>plr-mcp</b>, and fluorescence plus a <b>Rhodamine-B</b> gate verify the volumes physically — before a conformal <b>QC gate</b> decides accept or escalate, and the loop repeats.</p>
+    <h1 class="title xl">bay-hack<span class="lite">two world models close the liquid-handling loop</span></h1>
+    <p class="lede"><b>Zeon's physical world model</b> represents the bench and safe execution. A complementary <b>scientific world model</b> chooses the next 40 uL formulation. Physical MCP executes concrete wells and volumes, measurement plus a <b>Rhodamine-B</b> gate verify the result, and the accepted well moves downstream.</p>
     <div class="cta">
       <a class="pill pill--solid" href="https://github.com/di-omics/bay-hack">View on GitHub</a>
       <a class="pill pill--ghost" href="#quickstart">Run the demo</a>
     </div>
-    <p class="meta">@di-omics — full-stack biologist building autonomous labs&nbsp;&nbsp;·&nbsp;&nbsp;Track A&nbsp;&nbsp;·&nbsp;&nbsp;Jul 25–26 · SF</p>
+    <p class="meta">@di-omics · full-stack biologist building autonomous labs&nbsp;&nbsp;·&nbsp;&nbsp;Track A&nbsp;&nbsp;·&nbsp;&nbsp;Jul 25–26 · SF</p>
 
     <div class="stats">
       <div class="stat"><b>6</b><span>runs vs ~26 grid</span></div>
-      <div class="stat"><b>R²≥0.995</b><span>Rhodamine-B validated</span></div>
-      <div class="stat"><b>conformal</b><span>QC gate</span></div>
-      <div class="stat"><b>7</b><span>tests green</span></div>
+      <div class="stat"><b>800 uL</b><span>search volume saved</span></div>
+      <div class="stat"><b>40</b><span>tips saved</span></div>
+      <div class="stat"><b>ledger</b><span>trust receipt</span></div>
       <div class="stat"><b>0</b><span>deps to demo</span></div>
     </div>
   </div>
@@ -229,8 +230,8 @@ footer .f-links{display:flex;gap:22px;font-size:13px;flex-wrap:wrap;}
   <div class="wrap">
     <div class="sec-head">
       <p class="eyebrow">See it run</p>
-      <h2 class="title">The world model closes the loop</h2>
-      <p class="lede">One run, in simulation: the world model proposes wells, each colored by fluorescence, a Rhodamine-B gate verifies the volumes, and a conformal gate lands on ACCEPT &mdash; recovering the optimum in ~6 runs vs ~26 for a grid sweep.</p>
+      <h2 class="title">Every run is a real plate plan</h2>
+      <p class="lede">Two seed wells and four adaptive wells are all visible. Each has a destination, stock volume, diluent volume, fresh tips, physical gates, and measurement provenance. ACCEPT triggers a real follow-up plan to H12.</p>
     </div>
     <img src="demo.gif" alt="bay-hack DBTL loop demo" style="width:100%;border:1px solid var(--line);border-radius:16px;display:block">
     <img src="convergence.svg" alt="convergence: about 6 runs vs 26 for a grid sweep" style="width:100%;max-width:640px;margin-top:22px;border:1px solid var(--line);border-radius:14px;display:block">
@@ -247,26 +248,27 @@ footer .f-links{display:flex;gap:22px;font-size:13px;flex-wrap:wrap;}
   <div class="wrap">
     <div class="sec-head">
       <p class="eyebrow">The closed loop</p>
-      <h2 class="title">Design–Build–Test–Learn, closed around a world model</h2>
-      <p class="lede">Six stages, closed. The <b>Design</b> stage is a world model that decides which well to run next — then Build/Test pipettes it, Verify measures it, and Learn feeds the next Plan. One backend swap at the Bridge points the same loop at Zeon's arm.</p>
+      <h2 class="title">Scientific decisions meet physical state</h2>
+      <p class="lede">The scientific model decides which experiment should run next. Zeon's physical model decides how to execute safely in the current world. The trust receipt joins plan, motion, measurement, verification, and follow-up.</p>
     </div>
 
     <div class="panel">
       <div class="flow">
         <span class="node">Plan</span><span class="arrow">→</span>
-        <span class="node accent">Design · world model</span><span class="arrow">→</span>
+        <span class="node accent">Scientific world model</span><span class="arrow">→</span>
         <span class="node">Build / Test</span><span class="arrow">→</span>
         <span class="node">Verify</span><span class="arrow">→</span>
-        <span class="node">Learn</span><span class="arrow">↻</span>
+        <span class="node">Learn</span><span class="arrow">→</span>
+        <span class="node">Follow up</span><span class="arrow">↻</span>
         <span class="node ghost">Plan</span>
       </div>
       <div class="flow bridge">
-        <span class="branch">└─ bridge</span><span class="arrow">→</span>
-        <span class="node swap">Zeon arm</span>
+        <span class="branch">└─ physical world</span><span class="arrow">→</span>
+        <span class="node swap">Zeon scene + executor</span>
       </div>
-      <p class="loop-note">The <b>Design</b> node is the world model — everything else executes and checks its proposal. <b>Learn</b> loops back to <b>Plan</b>; the dashed <b>Bridge</b> is the one swappable backend.</p>
+      <p class="loop-note">One model predicts scientific outcomes. One model tracks the physical bench. A measurement can update the next decision only after the physical gates pass.</p>
 
-      <p class="thesis">Plain-English goal <span class="a">→</span> a GP <b>world model</b> proposes the next experiment <span class="a">→</span> an agent executes it on a real (sim-first) liquid handler through <b>plr-mcp</b> <span class="a">→</span> fluorescence + a <b>Rhodamine-B</b> gate + CV verify it physically <span class="a">→</span> a conformal <b>QC gate</b> decides accept / escalate <span class="a">→</span> repeat <span class="a">→</span> then swap one backend and the same loop drives <b>Zeon's arm</b>.</p>
+      <p class="thesis">Goal <span class="a">→</span> verified 40 uL plate plan <span class="a">→</span> scientific model chooses the next well <span class="a">→</span> Zeon's physical model executes in the live scene <span class="a">→</span> measurement + volume gate + CV <span class="a">→</span> conformal accept / escalate <span class="a">→</span> 20 uL follow-up to H12.</p>
     </div>
   </div>
 </section>
@@ -277,52 +279,52 @@ footer .f-links{display:flex;gap:22px;font-size:13px;flex-wrap:wrap;}
     <div class="sec-head">
       <p class="eyebrow">What composes into what</p>
       <h2 class="title">Each stage is a real module</h2>
-      <p class="lede">No new framework — the loop is assembled from existing di-omics repos, each doing one job on the plate.</p>
+      <p class="lede">The loop is assembled from existing di-omics repos, with one narrow adapter to the venue's physical model.</p>
     </div>
 
     <div class="grid">
       <div class="card">
         <h3>Plan <span class="k">· NL → protocol</span></h3>
-        <p><span class="mod">plr-epigenome</span> · tipseq_plr/sow.py — a natural-language goal becomes a validated pipetting protocol.</p>
+        <p><span class="mod">plr-epigenome</span> · tipseq_plr/sow.py: a natural-language goal becomes a routed pipetting protocol.</p>
       </div>
       <div class="card">
         <h3>Design <span class="k">· world model</span></h3>
-        <p><span class="mod">ml-bio-eval / lab-world-model</span> — a GP world model + ParEGO propose the next well to run.</p>
+        <p><span class="mod">ml-bio-eval / lab-world-model</span>: a GP world model + ParEGO propose the next well to run.</p>
       </div>
       <div class="card">
         <h3>Build / Test <span class="k">· liquid handling</span></h3>
-        <p><span class="mod">plr-mcp</span> — plr_setup_deck, plr_transfer, plr_read_plate drive the deck and plate reader.</p>
+        <p><span class="mod">plr-mcp</span>: plr_setup_deck, plr_transfer, plr_read_plate drive the deck and plate reader.</p>
       </div>
       <div class="card">
         <h3>Move / dexterity</h3>
-        <p><span class="mod">plr-lab-robot</span> — Workcell, vision_guided_pick, DecapSkill handle labware and lids.</p>
+        <p><span class="mod">plr-lab-robot</span>: Workcell, vision_guided_pick, DecapSkill handle labware and lids.</p>
       </div>
       <div class="card">
         <h3>Verify <span class="k">· volumes</span></h3>
-        <p><span class="mod">plr-epigenome</span> · validation/rhodamine.py — Rhodamine-B absorbance, R²≥0.995 accept gate.</p>
+        <p><span class="mod">plr-epigenome</span> · validation/rhodamine.py: Rhodamine-B linearity, accuracy, and CV gate.</p>
       </div>
       <div class="card">
         <h3>Verify <span class="k">· steps</span></h3>
-        <p><span class="mod">lab-cv</span> — computer-vision checkpoints confirm each physical step happened.</p>
+        <p><span class="mod">lab-cv</span>: computer-vision checkpoints confirm each physical step happened.</p>
       </div>
       <div class="card">
         <h3>Learn</h3>
-        <p><span class="mod">ml-bio-eval</span> — split-conformal decides accept / reject / escalate before the loop repeats.</p>
+        <p><span class="mod">ml-bio-eval</span>: split-conformal decides accept / reject / escalate before the loop repeats.</p>
       </div>
       <div class="card">
-        <h3>Bridge <span class="k">· to Zeon</span></h3>
-        <p><span class="mod">bayhack/zeon_bridge.py</span> — a PyLabRobot arm backend that points the whole loop at Zeon.</p>
+        <h3>Physical world <span class="k">· Zeon</span></h3>
+        <p><span class="mod">bayhack/zeon_bridge.py</span>: maps verified actions into Zeon's scene-aware workflow executor.</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ZEON WEDGE -->
+<!-- ZEON COMPOSITION -->
 <section id="wedge">
   <div class="wrap">
     <div class="wedge">
-      <p class="eyebrow">The Zeon wedge</p>
-      <p><strong>Zeon doesn't use PyLabRobot.</strong> Write a <strong>PLR arm backend</strong> for their platform and the whole PLR ecosystem + this DBTL loop + <strong>Rhodamine validation</strong> runs on Zeon hardware — plus the <strong>trust layer</strong> a vision-first stack still needs.</p>
+      <p class="eyebrow">The two-model composition</p>
+      <p><strong>Zeon models the physical world.</strong> bay-hack models the scientific response. Coupling them lets the robot adapt to both the changing bench and the changing evidence, while every liquid transfer stays inspectable through PyLabRobot and MCP.</p>
     </div>
   </div>
 </section>
@@ -333,13 +335,13 @@ footer .f-links{display:flex;gap:22px;font-size:13px;flex-wrap:wrap;}
     <div class="sec-head">
       <p class="eyebrow">Quickstart</p>
       <h2 class="title">Run the loop in one command</h2>
-      <p class="lede">The demo runs the same Bayesian loop against a simulator — no lab, no dependencies.</p>
+      <p class="lede">The demo runs the same scientific loop against a simulator: no lab and no dependencies.</p>
     </div>
 
     <div class="term-wrap">
-      <pre class="term"><span class="c"># stdlib only — recovers a planted optimum in ~6 runs vs ~26 for a grid sweep</span>
-<span class="p">$</span> python -m bayhack.demo</pre>
-      <p class="caption"><b>Zero dependencies. Seven tests green.</b> The same world-model loop that drives the simulator drives the bench — and, at the Bridge, Zeon's arm.</p>
+      <pre class="term"><span class="c"># stdlib only: six visible, verified plate plans</span>
+<span class="p">$</span> python -m bayhack.demo --ledger run_artifacts/trust.json</pre>
+      <p class="caption"><b>Zero runtime dependencies. CI green.</b> The trust receipt identifies every value as modeled, simulated, measured, or hardware-validated.</p>
       <div class="cta" style="margin-top:20px">
         <a class="pill pill--solid" href="https://github.com/di-omics/bay-hack">View on GitHub</a>
       </div>

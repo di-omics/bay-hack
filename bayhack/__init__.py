@@ -9,13 +9,17 @@ from .loop import (
     WorldModel, Bench, DBTLLoop, RoundLog,
     rhodamine_gate, cv_checkpoint, conformal_gate,
 )
+from .assay import FollowUpAction, LiquidHandlingAssay, LiquidHandlingPlan, Transfer
+from .ledger import TrustLedger, TrustRecord
 
 # NOTE: the Zeon bridge is imported on demand (`from bayhack.zeon_bridge import
 # ZeonArmBackend`), never here -- so `import bayhack` never attempts to load
-# pylabrobot/plr_lr (CLAUDE.md rule 2: keep the sim path dependency-free).
+# pylabrobot/plr_lr (repository rule: keep the sim path dependency-free).
 
 __version__ = "0.1.0"
 __all__ = [
     "WorldModel", "Bench", "DBTLLoop", "RoundLog",
     "rhodamine_gate", "cv_checkpoint", "conformal_gate",
+    "Transfer", "LiquidHandlingPlan", "FollowUpAction", "LiquidHandlingAssay",
+    "TrustRecord", "TrustLedger",
 ]

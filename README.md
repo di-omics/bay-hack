@@ -2,22 +2,29 @@
 
 [![ci](https://github.com/di-omics/bay-hack/actions/workflows/ci.yml/badge.svg)](https://github.com/di-omics/bay-hack/actions/workflows/ci.yml)
 
-**A world model runs the bench.** Track-A entry for the 24hr AI for Science
+**Two world models close the liquid-handling loop.** Track A entry for the 24hr AI for Science
 World Models Hack @ Zeon Systems (Jul 25–26, SF).
 
-**Live site:** https://di-omics.github.io/bay-hack/ &middot; **Pitch slide:** [docs/slide.html](docs/slide.html) &middot; **Trust model:** [ACCEPTANCE.md](ACCEPTANCE.md)
+**Live site:** https://di-omics.github.io/bay-hack/ &middot; **Pitch slide:** [docs/slide.html](docs/slide.html) &middot; **Trust model:** [ACCEPTANCE.md](ACCEPTANCE.md) &middot; **Bring kit:** [HARDWARE_KIT.md](HARDWARE_KIT.md) &middot; **On-site runbook:** [ONSITE_RUNBOOK.md](ONSITE_RUNBOOK.md)
 
 ![bay-hack loop demo](docs/demo.gif)
 
-bay-hack is the **glue** that composes the [@di-omics](https://github.com/di-omics)
-autonomous-lab stack into one closed loop, plus a **bridge to Zeon's platform**.
-It is deliberately thin — the heavy lifting already lives in your repos.
+bay-hack couples two different world models:
 
-> Plain-English goal → a **GP world model** proposes the next experiment → an
-> agent executes it on a real (sim-first) liquid handler **through plr-mcp** →
-> fluorescence + a **Rhodamine-B gate** + **CV** verify it physically → a
-> **conformal QC gate** decides accept/escalate → repeat → then swap one backend
-> and the same loop drives **Zeon's arm**.
+1. **Zeon's physical world model** represents the bench, geometry, labware,
+   robot state, and safe physical execution.
+2. **bay-hack's scientific world model** predicts assay response and chooses the
+   next liquid-handling experiment under uncertainty.
+
+The project is the thin glue that composes the
+[@di-omics](https://github.com/di-omics) autonomous-lab stack around that loop.
+The heavy lifting already lives in the supporting repos.
+
+> Plain-English goal -> a **GP world model** proposes the next 40 uL formulation
+> -> an agent executes concrete wells and volumes through **plr-mcp** ->
+> fluorescence or camera data plus a **Rhodamine-B gate** and **CV** verify it
+> physically -> a **conformal QC gate** decides accept or escalate -> repeat ->
+> transfer 20 uL from the accepted well to H12 as the follow-up action.
 
 See **[STRATEGY.md](STRATEGY.md)** for the full winning plan, demo script, and
 6-day countdown.
@@ -27,13 +34,28 @@ See **[STRATEGY.md](STRATEGY.md)** for the full winning plan, demo script, and
 ```bash
 python -m bayhack.demo        # narrated CLI run
 python -m bayhack.dashboard   # live browser dashboard -> http://127.0.0.1:8000
+python -m bayhack.demo --ledger run_artifacts/trust.json
 ```
 
-You'll watch the world model recover a planted optimum in ~6 runs vs ~26 for a
-grid sweep, with the Rhodamine gate and conformal gate gating each round. The
-dashboard shows it visually: proposed wells coloring by fluorescence, the
-Rhodamine R&sup2; gate green, the convergence curve climbing, and the conformal
-gate landing on ACCEPT.
+You'll watch the world model recover a planted optimum in about 6 runs versus 26
+for a grid sweep. All six runs, including the two seed experiments, pass plan,
+Rhodamine, and CV gates before they train the model. The dashboard shows the
+destination well, stock and diluent volumes, signal, convergence, acceptance,
+and the verified follow-up transfer.
+
+## The portable liquid-handling assay
+
+| Position | Role |
+|---|---|
+| A1 | assay stock |
+| A2 | diluent |
+| B1 onward | 40 uL world-model proposals |
+| H12 | receives 20 uL from the accepted well |
+
+Each proposal becomes two verified source-to-destination transfers with unique
+tips. The default run is modeled, and the trust ledger says so explicitly. At
+the venue, connect either a plate reader or camera measurement without changing
+the scientific loop. See [HARDWARE_KIT.md](HARDWARE_KIT.md) for the exact pack list.
 
 ## The numbers
 
@@ -44,11 +66,13 @@ python -m bayhack.benchmark
 ```
 
 Across 30 seeds the world model recovers the planted optimum in **~6 runs**
-(100% convergence, avg |x&minus;x*| = 0.005) versus a **~26-run** grid sweep &mdash;
-a **4.3&times;** speedup. With the real `ml-bio-eval` gate installed, the
+(100% convergence, avg |x&minus;x*| about 0.006) versus a **~26-run** grid sweep,
+a **4.3&times;** speedup. The search uses about **240 uL and 12 tips** versus
+**1,040 uL and 52 tips** for the grid, saving about **800 uL and 40 tips** before
+the common follow-up step. With the real `ml-bio-eval` gate installed, the
 split-conformal QC gate holds **~0.90 empirical coverage** (target 1&minus;&alpha; = 0.90).
 
-## Run it for real — against the @di-omics stack, still no hardware
+## Run it through the real @di-omics stack, still with no hardware
 
 ```bash
 pip install -e ../plr-mcp -e ../plr-epigenome -e ../plr-lab-robot
@@ -57,24 +81,24 @@ PYTHONPATH=../../ml-bio-eval/lab-world-model \
 ```
 
 `bayhack/seams.py` holds lazy adapters that swap the stdlib stand-ins for your
-actual code — **verified to run with no instrument**:
+actual code, **verified to run with no instrument**:
 
-- **Execute** → `plr_mcp.lab.Lab` (chatterbox) runs the real pick/aspirate/
+- **Execute** -> `plr_mcp.lab.Lab` (chatterbox) runs the real pick/aspirate/
   dispense/read choreography.
-- **Verify** → `tipseq_plr.validation.evaluate` (the real Rhodamine gate, reaches
+- **Verify** -> `tipseq_plr.validation.evaluate` (the real Rhodamine gate, reaches
   `tier=liquid_tested`, R²=1.0) + `tipseq_plr.steps.vision.SimVision`.
-- **Design/Learn** → `labworld` GP + ParEGO + the split-conformal QC gate
+- **Design/Learn** -> `labworld` GP + ParEGO + the split-conformal QC gate
   (empirical coverage ~0.90 at α=0.10).
-- **Plan** → `tipseq_plr.sow` compiles English → a routed protocol.
-- **Dexterity** → `plr_lr` `Workcell.sim()` moves a plate between taught sites.
-- **Physical MCP** → an agent drives the loop over the real `plr-mcp` **MCP server**
-  (stdio) &mdash; `python -m bayhack.mcp_agent` calls `plr_setup_deck` &rarr;
-  `plr_transfer` &rarr; `plr_read_plate` as Claude would. This is the host's
+- **Plan** -> `tipseq_plr.sow` compiles English into a routed protocol.
+- **Dexterity** -> `plr_lr` `Workcell.sim()` moves a plate between taught sites.
+- **Physical MCP** -> an agent drives the loop over the real `plr-mcp` **MCP server**
+  (stdio). `python -m bayhack.mcp_agent` calls `plr_setup_deck` ->
+  `plr_transfer` -> `plr_read_plate` through the protocol boundary. This is the host's
   "Physical MCP" thesis, running.
 
 **Honest by design (so it survives judge questions):**
-- PyLabRobot 0.2.1's chatterbox plate reader returns zeros — decoupled from what
-  was dispensed — so the numeric fluorescence stays **modeled** until a real
+- PyLabRobot 0.2.1's chatterbox plate reader returns zeros and is decoupled from
+  what was dispensed, so the numeric fluorescence stays **modeled** until a real
   reader + reagents are wired on-site. The pipetting/read *choreography* is real.
 - Compiled protocols report `validation_tier=untested`; nothing is promoted to
   `liquid_tested`/`biovalidated` until real Rhodamine data clears the gate.
@@ -83,21 +107,22 @@ actual code — **verified to run with no instrument**:
 
 `bayhack/loop.py` is the orchestrator. Every stage is a **SEAM** to a real repo:
 
-| Stage | SEAM → your repo |
+| Stage | Seam to the supporting repo |
 |---|---|
-| Design (propose next) | `ml-bio-eval/lab-world-model` — GP + ParEGO |
-| Build / Test (execute) | `plr-mcp` — `plr_setup_deck`, `plr_transfer`, `plr_read_plate` |
-| Move / dexterity | `plr-lab-robot` (`plr_lr`) — `Workcell`, `vision_guided_pick`, `DecapSkill` |
-| Verify (volumes) | `plr-epigenome` — `validation/rhodamine.py` |
-| Verify (steps) | `plr-epigenome` `steps/vision.py` + `lab-cv` |
-| Learn (gate) | `ml-bio-eval` — split-conformal accept/reject/escalate |
-| Plan (NL → protocol) | `plr-epigenome` — `tipseq_plr/sow.py` |
-| **Bridge** | `bayhack/zeon_bridge.py` — a PyLabRobot arm backend for Zeon |
+| Scientific design | `ml-bio-eval/lab-world-model`: GP + ParEGO |
+| Build / Test | `plr-mcp`: `plr_setup_deck`, `plr_transfer`, `plr_read_plate` |
+| Physical world | Zeon's scene, geometry, state, and workflow executor |
+| Move / dexterity | `plr-lab-robot` (`plr_lr`): `Workcell`, `vision_guided_pick`, `DecapSkill` |
+| Verify volumes | `plr-epigenome`: `validation/rhodamine.py` |
+| Verify steps | `plr-epigenome` `steps/vision.py` + `lab-cv` |
+| Learn | `ml-bio-eval`: split-conformal accept/reject/escalate |
+| Plan | `plr-epigenome`: `tipseq_plr/sow.py` |
+| **Bridge** | `bayhack/zeon_bridge.py`: adapter from PLR actions to Zeon workflows |
 
 Out of the box those seams use tiny stdlib stand-ins so the loop runs with
 nothing installed. The real adapters live in **[`bayhack/seams.py`](bayhack/seams.py)**
-and fire when the repos are installed (`python -m bayhack.demo --real`, above) —
-see **[KICKOFF_PROMPT.md](KICKOFF_PROMPT.md)** and **[CLAUDE.md](CLAUDE.md)** for
+and fire when the repos are installed (`python -m bayhack.demo --real`, above).
+See **[KICKOFF_PROMPT.md](KICKOFF_PROMPT.md)** and **[CLAUDE.md](CLAUDE.md)** for
 the on-site build order (real reader, hardware confirms, the Zeon arm backend).
 
 ## Wire it up
@@ -108,17 +133,26 @@ pip install -e ../plr-mcp -e ../plr-lab-robot -e ../plr-epigenome
 # ml-bio-eval components install per-folder (see its README)
 ```
 
-Then open Claude Code in this folder and paste `KICKOFF_PROMPT.md`.
+Then open your coding agent in this folder and use `KICKOFF_PROMPT.md`.
 
-## The Zeon bridge (the win)
+## The Zeon composition
 
-Zeon doesn't use PyLabRobot. `bayhack/zeon_bridge.py::ZeonArmBackend` is a PLR arm
-backend that targets their platform &mdash; and it **already runs the swap in
-simulation today** (it subclasses `plr_lr`'s `SimulationArmBackend`, a full
-`pylabrobot` `SCARABackend`), so `ExperimentalSCARA(backend=ZeonArmBackend())`
-drives the whole pick/place choreography with no hardware. Each motion primitive
-logs a Zeon-SDK seam; on-site you fill those seams with the real SDK and the whole
-PLR ecosystem + this DBTL loop + Rhodamine validation run on Zeon's arm. The
-pure-PLR loop is the guaranteed fallback.
+Zeon's published stack describes a living digital twin that tracks geometry,
+physical state, and scientific state for safe workflow execution. bay-hack adds
+the complementary assay-response model that decides which formulation to run
+next. `bayhack/zeon_bridge.py::ZeonArmBackend` exercises the adapter shape in
+simulation today. On-site, map its enumerated seams to the Python workflow or
+skill API Zeon provides. The pure-PLR loop remains the guaranteed fallback.
+
+See Zeon's official descriptions of its
+[world model and workflow executor](https://www.zeonsystems.ai/blog/inside-the-zeon-stack)
+and the event's requirement to connect
+[planning, execution, measurement, and follow-up](https://luma.com/avi3l01q).
+
+## Repository rules
+
+See [HOUSE_RULES.md](HOUSE_RULES.md). Authorship stays `di-omics`, claims stay
+evidence-bounded, physical plans are verified before execution, and modeled
+measurements are never presented as measured.
 
 MIT licensed.

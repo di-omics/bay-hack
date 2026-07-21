@@ -1,110 +1,126 @@
-# 🏆 bay-hack — Winning Strategy
+# bay-hack winning strategy
 
-**24hr AI for Science World Models Hack @ Zeon Systems** · Jul 25–26, SF · Track A
-**You (@di-omics):** full-stack biologist, PyLabRobot power-user, an entire autonomous-lab stack already built.
-**Today:** Sun Jul 19 → **6 days out.** This is a *composition + pitch* job, not a build-from-scratch.
+## Track
 
----
+Choose **Track A: close the loop with robotics**.
 
-## 0. The one-liner
+The project is liquid-handling-first and maps directly to all four required
+verbs:
 
-> **A world model runs the bench.** An agent turns a plain-English goal into a validated protocol, a **GP world model proposes the next experiment**, it executes on a real (sim-first) liquid handler **through your MCP server**, fluorescence + a **Rhodamine-B gate** + CV **physically verify** it, a **conformal QC gate** decides accept/escalate, and it converges in far fewer runs than brute force — then the *same code* drives **Zeon's arm** via a one-line backend swap.
+1. **Planning:** compile the goal and verify concrete wells, volumes, and tips.
+2. **Robotic execution:** run the formulation through Physical MCP and the
+   available liquid handler or pipetting arm.
+3. **Measurement:** use a plate reader or camera, then apply volume and CV gates.
+4. **Follow-up:** transfer 20 uL from the accepted well to H12.
 
-Every word of that is something you've already shipped. bay-hack just wires them into one demo and adds the Zeon bridge.
+## The strongest framing
 
----
+The winning story is not that one world model replaces another. It is that two
+world models solve different parts of the same scientific loop:
 
-## 1. Isn't there already something here? — Yes. You have ~90% of it.
+- **Zeon's physical world model** represents geometry, equipment, labware,
+  motion, and changing physical state.
+- **bay-hack's scientific world model** predicts assay response, represents
+  uncertainty, and selects the next liquid-handling experiment.
 
-Here's the map from the hack's asks to your repos. This is your unfair advantage: almost nobody shows up with *validated-on-real-hardware* pieces.
+The physical model answers, "Can the robot execute this safely in the current
+world?" The scientific model answers, "Which experiment should the robot run
+next?" The trust ledger joins their evidence.
 
-| Loop stage (Track A) | Your repo / module | What it gives the demo |
-|---|---|---|
-| **Plan** (NL → protocol) | `plr-epigenome` → `tipseq_plr/sow.py` | Statement-of-Work compiler: `sow plan --text "…"` → runnable method **with a validation tier attached**. This is Zeon's "English → run," but *honest about trust*. |
-| **Design** (what next) | `ml-bio-eval/lab-world-model` | **GP world model + multi-objective BO (ParEGO)** proposes the next experiment. ~29% fewer runs than random. **This is the "World Models" theme, literally.** |
-| **Execute** (Physical MCP) | `plr-mcp` (`plr_setup_deck`, `plr_transfer`, `plr_read_plate`) | The host evangelizes "Physical MCPs." You *built the MCP server for PyLabRobot.* Chatterbox sim by default, `star`/`ot2`/`evo` real backends. |
-| **Move / dexterity** | `plr-lab-robot` (`plr_lr`: `Workcell.sim()`, `vision_guided_pick`, `DecapSkill`) | Arm plate moves, **eye-in-hand vision** (7 mm→sub-mm correction), **dexterous uncapping**. Covers Track C too. |
-| **Measure** | `plr-mcp` `plr_read_plate` (fluorescence) + `ml-bio-eval` Cytation read | Real readout in the loop. |
-| **Verify (volumes)** | `plr-epigenome` → `validation/rhodamine.py` | **Rhodamine-B gate**: R²≥0.995, accuracy/CV within tolerance. Proof the robot dispensed what the code said. *This is the differentiator judges remember.* |
-| **Verify (steps)** | `plr-epigenome` `steps/vision.py` + `lab-cv` | CV checkpoints at the reader-blind moments (bead loss, no pellet). Catches *execution* faults the reader can't. |
-| **Learn** (close loop) | `ml-bio-eval` conformal gate + `plr-minimum-effective` | Split-conformal **accept/reject/escalate** with a coverage guarantee; auto-decides ~79% at zero error. Plant-and-recover scoring. |
-| **Credibility** | `plr-tested` (Hamilton STAR, real) + `benchmarks`/`omics-demos` | You don't just sim — you've run it, and you score everything against planted ground truth. |
+## Demo spine
 
-**What to leave out** (don't dilute the demo): the deep omics analysis (`fullstack-omics` bioinformatics), `blastocyst-if`, `awesome-wetlab-cv`, `ot-flex-automation`. Keep them as "and I've also built…" depth for judge Q&A, not on the critical demo path.
+Use one plate and one visible assay. Do not demo every supporting repository.
 
----
+1. Show the 40 uL plate plan: A1 stock, A2 diluent, B1 onward proposals.
+2. Run two seed wells. Both pass plan, Rhodamine or colorimetric, and CV gates.
+3. Let the scientific model choose the next formulations.
+4. Show the response and uncertainty improve while concrete volumes remain visible.
+5. Land on ACCEPT in about six total runs.
+6. Open the trust receipt and point to `measurement.provenance`.
+7. Execute the 20 uL follow-up from the accepted well to H12.
+8. If the Zeon adapter is live, show the physical model execute the same action.
 
-## 2. The winning play: the Zeon bridge 🔌
+## 90-second script
 
-**Zeon's stack is vision-first, not PyLabRobot-based.** They built an NL→computer-vision→arm platform (off-the-shelf arms + depth cameras, general-purpose). PyLabRobot is the established open ecosystem (Hamilton, Tecan, Opentrons, plate readers) — and *you* bring the validation rigor that makes automation trustworthy for serious labs.
+**0:00 to 0:12**
 
-So the move that turns heads:
+"A moving robot is not yet autonomous science. The experiment only counts when
+the physical result is trustworthy enough to update the next decision."
 
-> **Write a PyLabRobot backend that targets Zeon's arm** (shape it like `plr_lr`'s `SimulationArmBackend`/`SCARABackend`, or `plr-epigenome`'s `robot_arm.py` `RobotArmBackend`). The moment it works, *the entire PyLabRobot protocol library — plus your DBTL loop, Rhodamine validation, and conformal gate — runs on Zeon's platform.* You'd hand Zeon instant compatibility with the whole open lab-automation world **and** the reliability layer (sim-first verify + fluorescent ladders + conformal QC) they need to be trusted by serious labs.
+**0:12 to 0:28**
 
-Prep the adapter *shape* now (`bayhack/zeon_bridge.py` is the stub). Wire it to their SDK on-site during build #1. If they don't expose an SDK, you still have the full pure-PLR loop as the guaranteed demo — the bridge is upside, not a dependency.
+"bay-hack couples two world models. Zeon models the physical bench and safe
+execution. My scientific model predicts assay response and chooses the next
+liquid-handling experiment under uncertainty."
 
----
+**0:28 to 0:58**
 
-## 3. The demo (90 seconds, one tight slice)
+"Here is the literal plate plan: stock from A1, diluent from A2, 40 microliters
+per proposal, and a fresh tip for each liquid. Even the seed runs must pass the
+volume and camera gates before the model can learn."
 
-Pick **one** visible, convergent instantiation and let the rest be depth. Recommended spine: **a fluorescence assay optimized by the world model, validated by Rhodamine, executed through MCP, with an arm uncap beat.**
+Run the dashboard. Point to the seed rows, volumes, signal, and ACCEPT.
 
-**Script:**
-- **0:00–0:12 — Pain.** "Zeon makes it easy to go from English to a moving robot. The hard part isn't motion — it's *trust*. Did it actually dispense what you asked? Most automation finds out after it's wasted the reagents."
-- **0:12–0:28 — The idea.** "bay-hack closes the loop with a world model. Plain-English goal in; a GP world model proposes the next experiment; it runs on a real liquid handler through my PyLabRobot MCP server; and — this is the part nobody else has — a Rhodamine-B gate proves the volumes were real before we trust a single number."
-- **0:28–0:58 — Live.** Type a goal → `sow` compiles it → world model proposes design → agent calls `plr_transfer`/`plr_read_plate` (chatterbox) → arm does a **vision-guided uncap** (`plr_lr`) → **fluorescence reads out**, Rhodamine gate goes green (R²≥0.995), CV checkpoint confirms the step executed → **conformal gate: accept** → next round, response climbs. Show the convergence curve: ~N runs vs thousands for brute force.
-- **0:58–1:15 — The bridge.** "Everything you saw was simulation-first and validated. Now watch me swap the backend —" flip `SimulationArmBackend` → `ZeonArmBackend` — "and the exact same loop drives Zeon's arm. I just made Zeon speak PyLabRobot."
-- **1:15–1:30 — Vision + ask.** "This is the trust layer for autonomous science: any protocol, any arm, physically verified. Repo's public. I'm Di — I build autonomous labs."
+**0:58 to 1:15**
 
-**Wow beats:** fluorescent plate + Rhodamine gate flipping green; the backend-swap-to-Zeon moment; the convergence curve. All read from the back of the room.
+"It found the accepted formulation in about six runs instead of a 26-point
+grid. That saves about 800 microliters and 40 tips in this search. Every step is
+captured in a machine-readable trust receipt, including whether the signal was
+modeled or measured."
 
----
+**1:15 to 1:30**
 
-## 4. 6-day countdown (today = Sun Jul 19)
+Execute or show the follow-up transfer.
 
-**Tonight / Mon (Jul 19–20) — wire the spine in sim.** Push bay-hack. Have Claude Code compose `sow` → `lab-world-model` → `plr-mcp` (chatterbox) → `rhodamine` gate into one `bayhack` loop that runs end-to-end simulated. Green `python -m bayhack.loop`.
+"Now the accepted well moves downstream. Plan, execute, measure, follow up.
+Two world models, one physically verified scientific loop. I'm Di. I build
+autonomous labs."
 
-**Tue (Jul 21) — add the physical-verification beats.** Wire `plr_lr` `Workcell` + `vision_guided_pick` + `DecapSkill` into the loop; add the CV checkpoint (`SimVision`). Confirm the Rhodamine gate + conformal gate both gate the loop.
+## Priority order before the event
 
-**Wed (Jul 22) — the demo surface.** A clean dashboard/CLI narrative: goal ▸ world-model proposal ▸ MCP execution ▸ fluorescence + gates ▸ convergence curve. Record a **sim-only fallback video**.
+1. Keep the six-run simulator and dashboard green.
+2. Rehearse camera colorimetry with food dye and the exact plate map.
+3. Confirm venue liquid handler, tips, reader, wavelengths, and chemical policy.
+4. Record one complete physical fallback run at home if possible.
+5. Rehearse the pitch with the plate in hand.
+6. On-site, connect one real measurement before attempting extra robotics.
+7. Freeze the path by Saturday evening and record it before robots stop.
 
-**Thu (Jul 23) — the Zeon bridge shape + pitch.** Finalize `zeon_bridge.py` interface so on-site it's fill-in-the-SDK. Lock the 90-sec script; build the one slide (loop diagram + the 3 world-model words + repo QR). Rehearse 3×.
+## What not to build
 
-**Fri (Jul 24) — buffer + pack.** Freeze scope. Rehearse 5×. Pack: laptop, charger, USB-C/HDMI, phone tripod, and if you're bringing labware/dye for a physical flourish, a Rhodamine/food-dye kit + a plate. Register for final demos: https://luma.com/5m9yhtzj
+- A second dashboard
+- A broad LLM planner with no physical consequence
+- A new robotics framework
+- A wet biology protocol that cannot finish inside the event
+- A complex multi-objective assay before one real read works
+- Any feature that makes the Zeon adapter mandatory for the fallback demo
 
-**Sat/Sun (Jul 25–26) — on-site.** 11a team formation (recruit; see §5). Build #1: wire `HardwareBackend`/`ZeonArmBackend` to the provided arm + camera, and the reader if available. Keep the sim path warm as fallback. **Sun 3p submit, 4:30–5:30 demo.** A sim demo that *works* beats a hardware demo that crashes.
+## Judge questions to be ready for
 
----
+**Why is this a world model?**
 
-## 5. Team (form on arrival) — you're the magnet
+The scientific model predicts response and uncertainty for unrun experiments,
+then uses those imagined outcomes to choose the next physical action. Zeon's
+world model handles the complementary spatial and state representation.
 
-You show up with a *running, validated* autonomous-lab loop. That recruits people. Keep it ≤4; you own the science + the loop.
+**What is real today?**
 
-**Recruit line:** "I've got a world-model DBTL loop already running in sim — English in, robot pipettes out, Rhodamine-validated, MCP-driven. I want someone on the provided arm/camera and someone on the demo UI, and we'll bridge it to Zeon's platform live. Come close the loop with me."
+The loop, plate plan, gates, ledger, follow-up, simulator paths, and repository
+adapters are real code. The default numeric response is modeled. The first
+on-site goal is to replace it with one real camera or reader value.
 
-**Roles to fill:** (1) robotics/hardware for on-site arm + camera wiring; (2) a front-end/storyteller to build the dashboard and help deliver the 90 seconds. You cover science, PLR, and the world model.
+**Why not just grid search?**
 
----
+The benchmark declares a 26-point baseline and reports search runs, reagent
+volume, tips, convergence, and error. The current modeled benchmark averages
+six runs, 240 uL, and 12 tips.
 
-## 6. Judge-rubric fit
+**What happens on a gate failure?**
 
-| Criterion | Why you win it |
-|---|---|
-| Innovation | A GP **world model** driving a **physically-verified** DBTL loop — verification-before-trust is novel. |
-| Technical execution | A real closed loop across planner + world model + MCP + arm + reader, sim-first with hardware swap. |
-| Relevance / impact | Trust is the actual blocker for autonomous labs; you have Hamilton-validated cred. |
-| Demo / wow | Rhodamine gate green + backend-swap-to-Zeon + convergence curve. |
-| Platform/theme fit | *World Models* + *simulation-first* (Zeon's thesis) + *Physical MCP* (host's) + the Zeon bridge. |
+The measurement does not train the model. The run escalates, remains visible in
+the ledger, and the operator can retry or inspect the physical system.
 
----
+**What happens after acceptance?**
 
-## 7. Risks & fallbacks (pre-decided)
-
-- **No Zeon SDK on-site** → demo the full pure-PLR loop; present the bridge as the roadmap. Still wins.
-- **Provided hardware flakes** → chatterbox sim backend, identical loop. Keep it warm.
-- **Reader unavailable** → your fluorescence read is simulated already; show the Rhodamine gate on canned paired data (`validation.cli evaluate --data run.json`).
-- **Scope creep** → one convergent assay slice, done clean. Depth lives in Q&A, not the demo path.
-- **Solo if team doesn't gel** → the loop runs end-to-end by itself. You always have a demo.
-
-**Next:** open `KICKOFF_PROMPT.md` in Claude Code (inside `bay-hack/`) and let it compose your repos + push. `bayhack/loop.py` already runs the skeleton in sim so you feel the loop tonight.
+The accepted well is transferred to H12 with a new tip. This is the required
+follow-up action, not a presentation-only banner.

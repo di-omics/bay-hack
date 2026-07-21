@@ -19,7 +19,8 @@ def real_demo():
     from . import seams
     status = seams.seam_status()
     print("=" * 68)
-    print("bay-hack — a world model runs the bench   (REAL seams, no hardware)")
+    print("bay-hack: two world models close the liquid-handling loop")
+    print("REAL @di-omics seams, simulated hardware")
     print("=" * 68)
     for label, ok in status.items():
         print(f"  [{'x' if ok else ' '}] {label}")
@@ -36,8 +37,14 @@ def real_demo():
         print(f"\n[execute] plr-mcp chatterbox ran the build+read choreography "
               f"(real PyLabRobot; reader decoupled in sim, so signal is modeled).")
         print(f"[verify]  tipseq_plr Rhodamine gate + SimVision gated every round.")
+        if loop.follow_up:
+            action = loop.follow_up["action"]
+            print(
+                f"[follow-up] {action['volume_ul']:g}uL {action['source']} -> "
+                f"{action['destination']} verified and executed"
+            )
     except seams.SeamUnavailable as e:
-        print(f"[execute/verify] skipped — {e}")
+        print(f"[execute/verify] skipped: {e}")
 
     from .zeon_bridge import zeon_swap_selfcheck, ZeonBridgeUnavailable
     from .mcp_agent import run_over_mcp, McpUnavailable
@@ -55,21 +62,26 @@ def real_demo():
         try:
             print(f"\n[{label}]\n  {fn()}")
         except (seams.SeamUnavailable, ZeonBridgeUnavailable, McpUnavailable) as e:
-            print(f"\n[{label}]\n  skipped — {e}")
+            print(f"\n[{label}]\n  skipped: {e}")
 
 
 def main():
     ap = argparse.ArgumentParser(description="bay-hack DBTL demo")
     ap.add_argument("--real", action="store_true",
                     help="run against the installed @di-omics stack (no hardware)")
+    ap.add_argument(
+        "--ledger",
+        metavar="PATH",
+        help="write a machine-readable trust receipt for the simulated run",
+    )
     args = ap.parse_args()
     if args.real:
         real_demo()
         return
 
     print("=" * 68)
-    print("bay-hack — a world model runs the bench   (simulation)")
-    print("Design → Build/Test (MCP) → Verify (Rhodamine + CV) → Learn (conformal)")
+    print("bay-hack: two world models close the liquid-handling loop   (simulation)")
+    print("Plan -> pipette -> measure -> verify -> learn -> follow up")
     print("=" * 68 + "\n")
 
     loop = DBTLLoop(Bench(), tol=0.03, budget=20)
@@ -81,15 +93,26 @@ def main():
     print()
     if hit:
         print(f"✓ recovered optimum x*≈{loop.bench.x_star:.2f} at x={bx:.3f} "
-              f"(fluor {by:.3f}) in {loop.runs_used} runs — vs ~{grid} for a grid sweep.")
+              f"(signal {by:.3f}) in {loop.runs_used} runs, vs ~{grid} for a grid sweep.")
     else:
         print(f"best x={bx:.3f} (target {loop.bench.x_star:.2f}) after {loop.runs_used} runs.")
 
-    print("\nEvery stage above is a SEAM to a real @di-omics repo:")
-    print("  Design  → ml-bio-eval/lab-world-model (GP + ParEGO)")
-    print("  Execute → plr-mcp (plr_transfer, plr_read_plate)")
-    print("  Verify  → plr-epigenome validation/rhodamine.py + lab-cv")
-    print("  Learn   → ml-bio-eval split-conformal accept/escalate gate")
+    if loop.follow_up:
+        action = loop.follow_up["action"]
+        print(
+            f"follow-up: {action['volume_ul']:g}uL {action['source']} -> "
+            f"{action['destination']}  verified and staged for downstream work"
+        )
+
+    if args.ledger:
+        destination = loop.ledger.save(args.ledger)
+        print(f"trust receipt: {destination}")
+
+    print("\nEvery stage above is a seam to a real @di-omics repo:")
+    print("  Design  -> ml-bio-eval/lab-world-model (GP + ParEGO)")
+    print("  Execute -> plr-mcp (plr_transfer, plr_read_plate)")
+    print("  Verify  -> plr-epigenome validation/rhodamine.py + lab-cv")
+    print("  Learn   -> ml-bio-eval split-conformal accept/escalate gate")
     print("Swap them in on your machine, then swap the arm backend for")
     print("ZeonArmBackend (zeon_bridge.py) to drive Zeon's platform.")
 

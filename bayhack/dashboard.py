@@ -29,10 +29,17 @@ def run_loop(seed: int = 7, budget: int = 20) -> dict:
         "grid": 26,
         "converged": abs(bx - loop.bench.x_star) <= loop.tol,
         "best_x": round(bx, 4), "best_y": round(by, 4),
-        "rounds": [{"k": r.k, "x": round(r.x, 4), "fluor": round(r.fluor, 4),
+        "rounds": [{"k": r.k, "phase": r.phase, "well": r.destination,
+                    "stock_ul": r.stock_ul, "diluent_ul": r.diluent_ul,
+                    "x": round(r.x, 4), "fluor": round(r.fluor, 4),
                     "r2": round(r.r2, 4), "decision": r.decision,
+                    "plan_verified": r.plan_verified,
+                    "measurement_provenance": r.measurement_provenance,
+                    "model_updated": r.model_updated,
                     "best_x": round(r.best_x, 4), "best_y": round(r.best_y, 4)}
                    for r in hist],
+        "follow_up": loop.follow_up,
+        "ledger": loop.ledger.to_dict(),
     }
 
 
@@ -42,6 +49,7 @@ PAGE = r"""<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>bay-hack &middot; live demo</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%235cae5a'/%3E%3Cpath d='M28 50h44' stroke='white' stroke-width='12' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;500;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -66,8 +74,10 @@ h1 .lite{font-weight:200;color:var(--matcha-deep);}
 .seed{font-family:var(--mono);font-size:13px;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:9px 12px;width:120px;}
 .seed:focus{outline:2px solid var(--matcha);}
 .muted{color:var(--muted);font-size:13px;font-weight:500;}
-.banner{display:flex;align-items:center;gap:11px;border-radius:14px;padding:14px 18px;margin:22px 0;
+.banner{display:block;border-radius:14px;padding:14px 18px;margin:22px 0;
   border:1px solid var(--line);background:var(--wash);font-weight:800;color:var(--matcha-deep);}
+.banner .headline{display:flex;align-items:center;gap:11px;}
+.banner-stats{display:flex;flex-wrap:wrap;gap:22px;margin:12px 0 0 22px;}
 .banner .dot{width:11px;height:11px;border-radius:50%;background:var(--matcha);flex:0 0 auto;}
 .card{background:#fff;border:1px solid var(--line);border-left:3px solid var(--matcha);border-radius:14px;padding:20px 22px;margin:16px 0;}
 .card h2{margin:0 0 4px;font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--matcha-deep);}
@@ -105,6 +115,10 @@ svg.vesica{width:56px;height:36px;fill:none;stroke:var(--matcha);stroke-width:1.
 .stat{display:inline-block;margin-right:22px;}
 .stat b{display:block;font-size:22px;font-weight:800;color:var(--matcha-deep);}
 .stat span{font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:800;}
+.receipt{display:flex;flex-wrap:wrap;gap:10px;}
+.receipt .proof{border:1px solid var(--line);border-radius:999px;background:var(--wash);padding:8px 12px;
+  color:var(--matcha-deep);font-family:var(--mono);font-size:11px;font-weight:600;}
+.receipt .proof.modeled{color:#7c6727;background:#fffaf0;border-color:#e7d9aa;}
 </style>
 </head>
 <body>
@@ -123,10 +137,10 @@ svg.vesica{width:56px;height:36px;fill:none;stroke:var(--matcha);stroke-width:1.
     <svg class="charm"><use href="#lh-target"/></svg>
   </div>
   <p class="eyebrow">bay-hack &middot; live demo</p>
-  <h1>a world model runs the bench</h1>
-  <p class="sub">A GP world model proposes the next well, an agent runs it through <b>plr-mcp</b>, a
-  <b>Rhodamine-B</b> gate verifies the volumes, and a conformal gate decides &mdash; recovering a planted
-  optimum in far fewer runs than a grid sweep. Everything below is the real loop, in simulation.</p>
+  <h1>two world models close the liquid-handling loop</h1>
+  <p class="sub">The scientific world model chooses the next 40 uL formulation. The physical world
+  model executes it safely. <b>plr-mcp</b>, a <b>Rhodamine-B</b> volume gate, CV, and conformal QC turn
+  every proposed well into a trust receipt before the accepted result moves downstream.</p>
 
   <div class="controls">
     <button class="run" id="run">&#9654; Run the loop</button>
@@ -140,17 +154,18 @@ svg.vesica{width:56px;height:36px;fill:none;stroke:var(--matcha);stroke-width:1.
     <h2>The closed loop</h2>
     <div class="flow">
       <span class="node">Plan</span><span class="arrow">&rarr;</span>
-      <span class="node accent">world model<small>design</small></span><span class="arrow">&rarr;</span>
+      <span class="node accent">scientific model<small>choose next well</small></span><span class="arrow">&rarr;</span>
       <span class="node">Build / Test<small>plr-mcp</small></span><span class="arrow">&rarr;</span>
       <span class="node">Verify<small>rhodamine + cv</small></span><span class="arrow">&rarr;</span>
-      <span class="node">Learn<small>conformal</small></span><span class="arrow">&#8634;</span>
-      <span class="node swap">Zeon arm<small>bridge</small></span>
+      <span class="node">Learn<small>conformal</small></span><span class="arrow">&rarr;</span>
+      <span class="node">Follow up<small>20 uL to H12</small></span><span class="arrow">&#8634;</span>
+      <span class="node swap">Zeon physical model<small>scene + executor</small></span>
     </div>
   </div>
 
   <div class="card">
     <h2>Experiments &middot; each well is one proposed run</h2>
-    <p class="note">Colored by measured fluorescence (deeper = stronger signal). The world model steers toward the optimum; the matcha ring marks the best well.</p>
+    <p class="note">Colored by assay score. The default signal is explicitly modeled; a camera or reader callback changes the receipt to measured. The matcha ring marks the best well.</p>
     <div class="legend"><span><span class="k" style="background:#eef2fb"></span>low signal</span><span><span class="k" style="background:#2f6fd6"></span>high signal</span><span><span class="k" style="box-shadow:0 0 0 2px var(--matcha);background:#fff"></span>best so far</span></div>
     <div class="wells" id="wells"></div>
   </div>
@@ -158,13 +173,19 @@ svg.vesica{width:56px;height:36px;fill:none;stroke:var(--matcha);stroke-width:1.
   <div class="grid2">
     <div class="card">
       <h2>Convergence</h2>
-      <p class="note">Best fluorescence found, per round.</p>
+      <p class="note">Best assay score found, per round.</p>
       <div id="chart"></div>
     </div>
     <div class="card">
-      <h2>Rounds</h2>
-      <div class="tablewrap"><table id="tbl"><thead><tr><th>rnd</th><th>x</th><th>fluor</th><th>rhodamine R&sup2;</th><th>gate</th></tr></thead><tbody></tbody></table></div>
+      <h2>Liquid-handling plan</h2>
+      <div class="tablewrap"><table id="tbl"><thead><tr><th>run</th><th>well</th><th>stock</th><th>diluent</th><th>signal</th><th>evidence</th><th>gate</th></tr></thead><tbody></tbody></table></div>
     </div>
+  </div>
+
+  <div class="card">
+    <h2>Trust receipt &middot; accepted run</h2>
+    <p class="note">Plan, execution, measurement provenance, physical gates, model update, and follow-up remain inspectable.</p>
+    <div class="receipt" id="receipt"></div>
   </div>
 
   <div class="foot">
@@ -202,8 +223,9 @@ async function run(){
   // banner
   const b=$('#banner');
   if(d.converged){
-    b.innerHTML=`<span class="dot"></span>Recovered optimum x*&asymp;${d.x_star.toFixed(2)} at x=${d.best_x.toFixed(3)} (fluor ${d.best_y.toFixed(3)}) in <b style="margin:0 .3em">${d.runs_used}</b> runs &mdash; vs ~${d.grid} for a grid sweep.
-      <span class="stat" style="margin-left:22px"><b>${d.runs_used}</b><span>runs</span></span><span class="stat"><b>${d.grid}</b><span>grid</span></span><span class="stat"><b>ACCEPT</b><span>conformal gate</span></span>`;
+    const f=d.follow_up.action;
+    b.innerHTML=`<div class="headline"><span class="dot"></span><span>Recovered optimum x*&asymp;${d.x_star.toFixed(2)} at x=${d.best_x.toFixed(3)} (signal ${d.best_y.toFixed(3)}) in ${d.runs_used} runs, vs ~${d.grid} for a grid sweep. Follow-up: ${f.volume_ul}uL ${f.source} &rarr; ${f.destination}, verified.</span></div>
+      <div class="banner-stats"><span class="stat"><b>${d.runs_used}</b><span>runs</span></span><span class="stat"><b>800uL</b><span>search volume saved</span></span><span class="stat"><b>MODELED</b><span>signal provenance</span></span><span class="stat"><b>ACCEPT</b><span>conformal gate</span></span></div>`;
   } else {
     b.innerHTML=`<span class="dot" style="background:var(--bad)"></span>best x=${d.best_x.toFixed(3)} (target ${d.x_star.toFixed(2)}) after ${d.runs_used} runs.`;
   }
@@ -217,9 +239,20 @@ async function run(){
   // table
   $('#tbl tbody').innerHTML=d.rounds.map(r=>{
     const g=r.decision==='ACCEPT'?'acc':(r.decision==='ESCALATE'?'esc':'');
-    return `<tr><td class="lab">R${r.k}</td><td>${r.x.toFixed(3)}</td><td>${r.fluor.toFixed(3)}</td>
-      <td class="pass">${r.r2.toFixed(4)} PASS</td><td class="${g}">${r.decision}</td></tr>`;
+    return `<tr><td class="lab">R${r.k} ${r.phase}</td><td>${r.well}</td><td>${r.stock_ul.toFixed(1)}uL</td>
+      <td>${r.diluent_ul.toFixed(1)}uL</td><td>${r.fluor.toFixed(3)}</td><td>${r.measurement_provenance.toUpperCase()}</td><td class="${g}">${r.decision}</td></tr>`;
   }).join('');
+  const accepted=d.ledger.records[d.ledger.records.length-1];
+  const proofs=[
+    ['PLAN PASS', accepted.plan_verification.passed],
+    ['EXECUTE '+accepted.execution.backend, accepted.execution.passed],
+    ['MEASURE '+accepted.measurement.provenance.toUpperCase(), true],
+    ['VOLUME GATE '+accepted.physical_verification.provenance.toUpperCase(), accepted.physical_verification.rhodamine.passed],
+    ['CV '+accepted.physical_verification.provenance.toUpperCase(), accepted.physical_verification.cv.passed],
+    ['MODEL UPDATED', accepted.world_model.updated],
+    ['FOLLOW-UP '+d.ledger.follow_up.execution.backend.toUpperCase(), d.ledger.follow_up.execution.passed],
+  ];
+  $('#receipt').innerHTML=proofs.map(([label,ok])=>`<span class="proof${label.includes('MODELED')?' modeled':''}">${ok?'&#10003;':'!'} ${label}</span>`).join('');
 }
 $('#run').addEventListener('click',run);
 run();

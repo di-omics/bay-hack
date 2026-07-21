@@ -17,6 +17,33 @@ def test_execute_seam_runs_real_choreography():
     assert b.x_star == b.model.x_star          # loop convergence still works
 
 
+def test_execute_seam_keeps_one_persistent_lab_session():
+    pytest.importorskip("plr_mcp")
+    from bayhack.assay import LiquidHandlingAssay
+    from bayhack.seams import PlrMcpBench
+    b = PlrMcpBench(quiet=True)
+    assay = LiquidHandlingAssay()
+    b.run_plan(assay.plan(1, "seed", 0.2))
+    first_lab = b._lab_instance
+    b.run_plan(assay.plan(2, "seed", 0.8))
+    assert b._lab_instance is first_lab
+    assert b._setup_done
+
+
+def test_measurement_callback_marks_value_as_measured():
+    pytest.importorskip("plr_mcp")
+    from bayhack.assay import LiquidHandlingAssay
+    from bayhack.seams import PlrMcpBench
+
+    def camera_measurement(plan, _reader_result):
+        return plan.design_x * 0.9
+
+    b = PlrMcpBench(quiet=True, measurement_fn=camera_measurement)
+    value = b.run_plan(LiquidHandlingAssay().plan(1, "seed", 0.2))
+    assert value == pytest.approx(0.18)
+    assert b.measurement_provenance == "measured"
+
+
 def test_rhodamine_gate_real_reaches_liquid_tested():
     pytest.importorskip("tipseq_plr")
     from bayhack.seams import rhodamine_gate_real
@@ -88,3 +115,5 @@ def test_real_loop_converges_through_real_seams():
     loop.run(verbose=False)
     bx, _ = loop.wm.best()
     assert abs(bx - loop.bench.x_star) <= 0.06
+    assert loop.follow_up and loop.follow_up["executed"]
+    assert loop.follow_up["action"]["destination"] == "H12"

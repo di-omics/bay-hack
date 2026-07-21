@@ -21,7 +21,7 @@ GRID = 26  # a 1-knob exhaustive sweep, for contrast
 
 def run_benchmark(seeds=range(1, 31)) -> dict:
     seeds = list(seeds)
-    runs, errs, converged = [], [], 0
+    runs, errs, volumes, tips, converged = [], [], [], [], 0
     for s in seeds:
         loop = DBTLLoop(Bench(rng=random.Random(s)), tol=0.03, budget=25)
         loop.run(verbose=False)
@@ -31,16 +31,33 @@ def run_benchmark(seeds=range(1, 31)) -> dict:
             converged += 1
         runs.append(loop.runs_used)
         errs.append(err)
+        volumes.append(
+            sum(record.plan["total_volume_ul"] for record in loop.ledger.records)
+        )
+        tips.append(
+            sum(len(record.plan["transfers"]) for record in loop.ledger.records)
+        )
     n = len(seeds)
+    avg_runs = sum(runs) / n
+    avg_volume = sum(volumes) / n
+    avg_tips = sum(tips) / n
+    grid_volume = GRID * loop.assay.total_volume_ul
+    grid_tips = GRID * 2
     return {
         "n_seeds": n,
         "grid": GRID,
-        "avg_runs": round(sum(runs) / n, 2),
+        "avg_runs": round(avg_runs, 2),
         "max_runs": max(runs),
         "converged": converged,
         "convergence_rate": round(converged / n, 3),
         "avg_x_error": round(sum(errs) / n, 4),
-        "speedup_vs_grid": round(GRID / (sum(runs) / n), 1),
+        "speedup_vs_grid": round(GRID / avg_runs, 1),
+        "avg_reaction_volume_ul": round(avg_volume, 1),
+        "grid_reaction_volume_ul": round(grid_volume, 1),
+        "reaction_volume_saved_ul": round(grid_volume - avg_volume, 1),
+        "avg_tips": round(avg_tips, 1),
+        "grid_tips": grid_tips,
+        "tips_saved": round(grid_tips - avg_tips, 1),
     }
 
 
@@ -79,7 +96,7 @@ def convergence_svg(seed: int = 7) -> str:
     return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" font-family="Manrope,system-ui,sans-serif">
 <rect width="{W}" height="{H}" fill="#ffffff"/>
 <text x="{pad}" y="26" fill="#3c8446" font-size="12" font-weight="800" letter-spacing="1.5">BAY-HACK &#183; CONVERGENCE</text>
-<text x="{pad}" y="42" fill="#28372a" font-size="13" font-weight="800">World model recovers the optimum in {loop.runs_used} runs &#8212; vs ~{GRID} for a grid sweep</text>
+<text x="{pad}" y="42" fill="#28372a" font-size="13" font-weight="800">World model recovers the optimum in {loop.runs_used} runs, vs ~{GRID} for a grid sweep</text>
 {grid}
 <line x1="{pad}" y1="{Y(1):.1f}" x2="{W - pad}" y2="{Y(1):.1f}" stroke="#9db8a0" stroke-dasharray="5 4" stroke-width="1.3"/>
 <polyline points="{best_line}" fill="none" stroke="#5cae5a" stroke-width="2.6"/>
@@ -107,6 +124,11 @@ def main():
     print(f"  convergence rate     : {r['convergence_rate'] * 100:.0f}%  "
           f"({r['converged']}/{r['n_seeds']})")
     print(f"  avg |x - x*|         : {r['avg_x_error']}")
+    print(f"  reaction volume      : {r['avg_reaction_volume_ul']:.0f} uL vs "
+          f"{r['grid_reaction_volume_ul']:.0f} uL grid "
+          f"({r['reaction_volume_saved_ul']:.0f} uL saved)")
+    print(f"  disposable tips      : {r['avg_tips']:.0f} vs {r['grid_tips']} grid "
+          f"({r['tips_saved']:.0f} saved)")
     cov = real_conformal_coverage()
     if cov:
         print("-" * 56)
