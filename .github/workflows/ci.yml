@@ -17,3 +17,7 @@ jobs:
         run: python -m bayhack.demo
       - name: Tests
         run: pytest -q
+      - name: Benchmark claims must stay reproducible
+        run: python -m bayhack.benchmark
+      - name: Compile all Python modules
+        run: python -m compileall -q bayhack tests

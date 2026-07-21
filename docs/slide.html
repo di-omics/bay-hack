@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>bay-hack · a world model runs the bench</title>
+<title>bay-hack · two world models close the liquid-handling loop</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%235cae5a'/%3E%3Cpath d='M28 50h44' stroke='white' stroke-width='12' stroke-linecap='round'/%3E%3C/svg%3E">
 
 <!-- ── KIT BLOCK 1: FONTS (verbatim) ───────────────────────────────── -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -107,11 +108,34 @@ svg.charm.mini{width:15px;height:15px;stroke-width:1.7;}
 .qr{text-align:center;}
 .qr-box{width:104px;height:104px;border:2px dashed var(--matcha);border-radius:12px;background:#fff;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;margin:0 auto;}
-.qr-box svg{width:38px;height:38px;fill:none;stroke:var(--matcha);stroke-width:1.5;opacity:.45;}
+.qr-box img{width:88px;height:88px;display:block;}
 .qr-box small{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:8.5px;letter-spacing:.14em;
   text-transform:uppercase;color:var(--muted);font-weight:600;}
 .qr-label{margin-top:8px;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;
   font-weight:600;color:var(--matcha-deep);}
+
+@media(max-height:850px){
+  .slide{justify-content:flex-start;padding:18px 40px 14px;}
+  .charm-row svg.charm{width:25px;height:25px;}
+  .head{margin-top:9px;}
+  .head .eyebrow{margin-bottom:5px;}
+  h1.title .title-main{font-size:clamp(46px,5.8vw,72px);}
+  h1.title .lite{font-size:clamp(18px,2.1vw,26px);margin-top:4px;}
+  .promise{margin-top:8px;font-size:15px;line-height:1.35;}
+  .loopwrap{margin-top:12px;}
+  .flow .node{padding:7px 10px;font-size:12px;}
+  .grid3{margin-top:12px;gap:12px;}
+  .card{padding:10px 14px;}
+  .card .card-h{margin-bottom:4px;}
+  .card p{font-size:12px;line-height:1.35;}
+  .stats{margin-top:10px;gap:10px;}
+  .statbox{padding:8px 10px;}
+  .bottom{margin-top:9px;align-items:center;}
+  .qr-box{width:86px;height:86px;}
+  .qr-box img{width:74px;height:74px;}
+  .qr-label{margin-top:3px;font-size:9px;}
+  .brandline svg.vesica{width:48px;height:30px;}
+}
 </style>
 </head>
 
@@ -149,11 +173,11 @@ svg.charm.mini{width:15px;height:15px;stroke-width:1.7;}
    <p class="eyebrow">24HR AI FOR SCIENCE · WORLD MODELS HACK @ ZEON SYSTEMS · TRACK A</p>
    <h1 class="title">
     <span class="title-main">bay-hack</span>
-    <span class="lite">a world model runs the bench</span>
+    <span class="lite">two world models close the liquid-handling loop</span>
    </h1>
    <p class="promise">
-    Zeon makes English <span class="to">&rarr;</span> motion easy. The hard part is <b>trust</b> &mdash;
-    did the robot actually dispense what you asked? <span class="brand">bay-hack</span> closes the loop and <b>proves it</b>.
+    Zeon models the <b>physical world</b>. bay-hack models the <b>scientific response</b>.
+    Together they decide what to run, execute it safely, verify it, and act on the result.
    </p>
   </div>
 
@@ -162,17 +186,19 @@ svg.charm.mini{width:15px;height:15px;stroke-width:1.7;}
    <div class="flow loop">
     <span class="node">Plan<small>plan</small></span>
     <span class="arrow">&rarr;</span>
-    <span class="node accent">world model<small>design &middot; twin</small></span>
+    <span class="node accent">scientific model<small>choose the next well</small></span>
     <span class="arrow">&rarr;</span>
     <span class="branch">
      <span class="node">Build / Test<small>execute</small></span>
      <span class="arrow down">&darr;</span>
-     <span class="node arm"><svg class="charm mini"><use href="#lh-pipette"/></svg>Zeon arm</span>
+     <span class="node arm"><svg class="charm mini"><use href="#lh-pipette"/></svg>Zeon physical model</span>
     </span>
     <span class="arrow">&rarr;</span>
     <span class="node">Verify<small>measure</small></span>
     <span class="arrow">&rarr;</span>
-    <span class="node">Learn<small>follow-up</small></span>
+    <span class="node">Learn<small>accept / escalate</small></span>
+    <span class="arrow">&rarr;</span>
+    <span class="node">Follow up<small>20 uL to H12</small></span>
     <span class="arrow loopback">&#8634;</span>
    </div>
   </div>
@@ -196,9 +222,9 @@ svg.charm.mini{width:15px;height:15px;stroke-width:1.7;}
   <!-- stat row -->
   <div class="stats">
    <div class="statbox"><div class="stat"><b>6</b><span>runs vs ~26 grid</span></div></div>
-   <div class="statbox"><div class="stat"><b>Rhodamine-B</b><span>validated readout</span></div></div>
-   <div class="statbox"><div class="stat"><b>Conformal</b><span>QC gate</span></div></div>
-   <div class="statbox"><div class="stat"><b>MCP</b><span>driven</span></div></div>
+   <div class="statbox"><div class="stat"><b>800 uL</b><span>search volume saved</span></div></div>
+   <div class="statbox"><div class="stat"><b>40 tips</b><span>saved vs grid</span></div></div>
+   <div class="statbox"><div class="stat"><b>Trust receipt</b><span>every run</span></div></div>
   </div>
 
   <!-- footer + QR -->
@@ -209,8 +235,7 @@ svg.charm.mini{width:15px;height:15px;stroke-width:1.7;}
    </div>
    <div class="qr">
     <div class="qr-box">
-     <svg><use href="#lh-target"/></svg>
-     <small>scan</small>
+     <img src="qr.svg" alt="QR code to github.com/di-omics/bay-hack">
     </div>
     <div class="qr-label">github.com/di-omics/bay-hack</div>
    </div>

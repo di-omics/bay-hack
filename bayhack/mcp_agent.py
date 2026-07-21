@@ -2,7 +2,7 @@
 
 Instead of calling `plr_mcp.lab.Lab` in-process, this spawns the real `plr-mcp` MCP
 server over stdio and runs one experiment by calling its tools -- plr_setup_deck,
-plr_transfer, plr_read_plate -- exactly as an MCP agent (e.g. Claude) would. That is
+plr_transfer, plr_read_plate -- exactly as any MCP client would. That is
 the "Physical MCP" the World Models Hack host champions: an agent turns a goal into
 tool calls against a real (sim-first) liquid handler.
 

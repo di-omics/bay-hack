@@ -1,9 +1,9 @@
-"""Zeon bridge -- make Zeon's arm speak PyLabRobot.
+"""Zeon bridge for coupling physical and scientific world models.
 
-The winning wedge: Zeon's platform is vision-first and does NOT use PyLabRobot. If
-a PyLabRobot arm backend targets Zeon's platform, then the entire PLR protocol
-library -- plus this DBTL loop, Rhodamine validation, and conformal gate -- runs
-on Zeon hardware unchanged.
+Zeon's physical world model tracks geometry, equipment, labware, and state.
+bay-hack's scientific world model selects the next experiment. This adapter shape
+maps verified PyLabRobot actions into the Python workflow or skill executor Zeon
+provides on-site.
 
 Unlike a hand-waved stub, `ZeonArmBackend` RUNS TODAY in simulation: it subclasses
 plr_lr's `SimulationArmBackend` (a full `pylabrobot.arms.backend.SCARABackend`,

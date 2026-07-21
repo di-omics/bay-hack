@@ -20,9 +20,12 @@ import math
 import random
 from dataclasses import dataclass, field
 
+from .assay import FollowUpAction, LiquidHandlingAssay, LiquidHandlingPlan
+from .ledger import TrustLedger
+
 
 # ─────────────────────────────────────────────────────────────────────────────
-# DESIGN — the world model proposes the next experiment
+# DESIGN: the world model proposes the next experiment
 #   SEAM: replace WorldModel with ml-bio-eval/lab-world-model
 #         (GP surrogate + multi-objective Bayesian optimization, ParEGO).
 # ─────────────────────────────────────────────────────────────────────────────
@@ -53,10 +56,12 @@ class WorldModel:
         unc = 1.0 / math.sqrt(1.0 + wsum)           # ->1 when sparse, ->0 when dense
         return mean, min(unc, 1.0)
 
-    def propose(self, grid: int = 101) -> float:
+    def propose(self, grid: int = 101, feasible_fn=None) -> float:
         best_x, best_ucb = 0.5, -1e9
         for i in range(grid):
             x = i / (grid - 1)
+            if feasible_fn is not None and not feasible_fn(x):
+                continue
             mean, unc = self.predict(x)
             ucb = mean + self.kappa * unc
             if ucb > best_ucb:
@@ -69,7 +74,7 @@ class WorldModel:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# BUILD / TEST — execute the design on the bench and read it out
+# BUILD / TEST: execute the design on the bench and read it out
 #   SEAM: replace Bench with plr-mcp tools:
 #         plr_setup_deck -> plr_transfer(...) -> plr_read_plate(mode="fluorescence")
 #         and plr-lab-robot Workcell.move_plate / vision_guided_pick / DecapSkill.
@@ -87,6 +92,11 @@ class Bench:
     pipetting_bias: float = 0.06
     noise: float = 0.02
     rng: random.Random = field(default_factory=lambda: random.Random(7))
+    backend_name: str = "stdlib-simulation"
+    measurement_provenance: str = "modeled"
+    verification_provenance: str = "modeled"
+    executed_plans: list[LiquidHandlingPlan] = field(default_factory=list)
+    executed_follow_ups: list[FollowUpAction] = field(default_factory=list)
 
     def true_response(self, x: float) -> float:
         return math.exp(-((x - self.x_star) / self.width) ** 2)
@@ -97,6 +107,16 @@ class Bench:
         #       then plr_read_plate to measure fluorescence.
         signal = self.true_response(x) * (1 - self.pipetting_bias)
         return max(0.0, signal + self.rng.uniform(-self.noise, self.noise))
+
+    def run_plan(self, plan: LiquidHandlingPlan) -> float:
+        """Execute a verified liquid-handling plan in simulation."""
+        self.executed_plans.append(plan)
+        return self.run_design(plan.design_x)
+
+    def run_follow_up(self, action: FollowUpAction) -> bool:
+        """Stage the accepted well for the downstream step in simulation."""
+        self.executed_follow_ups.append(action)
+        return True
 
     def rhodamine_series(self) -> list[tuple[float, float]]:
         """A Rhodamine-B dispense ladder: (commanded_uL, measured_signal)."""
@@ -109,7 +129,7 @@ class Bench:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# VERIFY — did the robot dispense what the code said? did the step execute?
+# VERIFY: did the robot dispense what the code said? did the step execute?
 #   SEAM: replace with plr-epigenome tipseq_plr/validation/rhodamine.py
 #         and steps/vision.py (SimVision / LabCvVision backed by lab-cv).
 # ─────────────────────────────────────────────────────────────────────────────
@@ -134,7 +154,7 @@ def cv_checkpoint(fault: bool = False) -> dict:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# LEARN — decide accept / escalate, then update the world model
+# LEARN: decide accept / escalate, then update the world model
 #   SEAM: replace with ml-bio-eval split-conformal accept/reject/escalate gate.
 # ─────────────────────────────────────────────────────────────────────────────
 def conformal_gate(uncertainty: float, accept_below: float = 0.55,
@@ -149,64 +169,180 @@ def conformal_gate(uncertainty: float, accept_below: float = 0.55,
 @dataclass
 class RoundLog:
     k: int
+    phase: str
     x: float
     fluor: float
     r2: float
     decision: str
     best_x: float
     best_y: float
+    destination: str
+    stock_ul: float
+    diluent_ul: float
+    plan_verified: bool
+    measurement_provenance: str
+    model_updated: bool
 
 
 class DBTLLoop:
     """Design-Build-Test-Learn, composed across the repos, with a QC gate."""
 
     def __init__(self, bench: Bench | None = None, tol: float = 0.03, budget: int = 20,
-                 rhodamine_fn=None, cv_fn=None):
+                 rhodamine_fn=None, cv_fn=None, assay: LiquidHandlingAssay | None = None):
         self.bench = bench or Bench()
         self.wm = WorldModel()
         self.tol = tol
         self.budget = budget
+        self.assay = assay or LiquidHandlingAssay()
         # SEAM hooks: default to the stdlib gates; bayhack.seams swaps in the real
         # tipseq_plr Rhodamine + SimVision gates. Both take the same call shape.
         self.rhodamine_fn = rhodamine_fn or rhodamine_gate
         self.cv_fn = cv_fn or cv_checkpoint
         self.history: list[RoundLog] = []
         self.runs_used: int = 0
+        self.follow_up: dict | None = None
+        self.ledger = TrustLedger()
+
+    @property
+    def backend_name(self) -> str:
+        return str(getattr(self.bench, "backend_name", type(self.bench).__name__))
+
+    @property
+    def measurement_provenance(self) -> str:
+        return str(getattr(self.bench, "measurement_provenance", "modeled"))
+
+    @property
+    def verification_provenance(self) -> str:
+        return str(getattr(self.bench, "verification_provenance", "modeled"))
+
+    def _run_plan(self, plan: LiquidHandlingPlan) -> float:
+        runner = getattr(self.bench, "run_plan", None)
+        if callable(runner):
+            return float(runner(plan))
+        return float(self.bench.run_design(plan.design_x))
+
+    def _execute_round(self, run_id: int, phase: str, x: float) -> RoundLog:
+        plan = self.assay.plan(run_id, phase, x)
+        plan_verification = self.assay.verify(plan)
+        if not plan_verification["passed"]:
+            raise ValueError(
+                "world-model proposal failed physical plan verification: "
+                + "; ".join(plan_verification["reasons"])
+            )
+
+        fluor = self._run_plan(plan)
+        rhod = self.rhodamine_fn(self.bench.rhodamine_series())
+        cv = self.cv_fn(fault=False)
+        trustworthy = rhod["passed"] and cv["passed"]
+        if trustworthy:
+            self.wm.observe(x, fluor)
+        _, unc = self.wm.predict(x)
+        decision = conformal_gate(unc) if trustworthy else "ESCALATE"
+        bx, by = self.wm.best() if self.wm.ys else (x, 0.0)
+        record = RoundLog(
+            k=run_id,
+            phase=phase,
+            x=x,
+            fluor=fluor,
+            r2=rhod["r2"],
+            decision=decision,
+            best_x=bx,
+            best_y=by,
+            destination=plan.destination,
+            stock_ul=plan.stock_ul,
+            diluent_ul=plan.diluent_ul,
+            plan_verified=True,
+            measurement_provenance=self.measurement_provenance,
+            model_updated=trustworthy,
+        )
+        self.history.append(record)
+        self.ledger.append_round(
+            plan=plan,
+            plan_verification=plan_verification,
+            backend=self.backend_name,
+            measurement_value=fluor,
+            measurement_provenance=self.measurement_provenance,
+            rhodamine=rhod,
+            cv=cv,
+            verification_provenance=self.verification_provenance,
+            decision=decision,
+            best_x=bx,
+            best_y=by,
+            model_updated=trustworthy,
+        )
+        return record
+
+    def _stage_follow_up(self) -> None:
+        best_record = max(self.history, key=lambda record: record.fluor)
+        accepted_plan = self.assay.plan(
+            best_record.k, best_record.phase, best_record.x
+        )
+        action = self.assay.follow_up(accepted_plan)
+        verification = action.verify(
+            available_ul=accepted_plan.total_volume_ul,
+            product_well=self.assay.product_well,
+        )
+        executed = False
+        if verification["passed"]:
+            runner = getattr(self.bench, "run_follow_up", None)
+            executed = bool(runner(action)) if callable(runner) else True
+        self.follow_up = {
+            "action": action.to_dict(),
+            "verification": verification,
+            "executed": executed,
+        }
+        self.ledger.append_follow_up(
+            action,
+            verification,
+            executed,
+            self.backend_name,
+        )
 
     def run(self, verbose: bool = True) -> list[RoundLog]:
-        # seed with two spread-out probes so the surrogate isn't blind
+        if self.budget < 3:
+            raise ValueError("budget must allow two seed runs and one proposal")
+        if self.history:
+            raise RuntimeError("a DBTLLoop instance can only be run once")
+
+        # Seed experiments are real experiments. They pass the same physical
+        # gates and appear in the ledger before they can train the world model.
         for x0 in (0.2, 0.8):
-            self.wm.observe(x0, self.bench.run_design(x0))
-
-        for k in range(1, self.budget + 1):
-            # DESIGN
-            x = self.wm.propose()
-            # BUILD / TEST
-            fluor = self.bench.run_design(x)
-            # VERIFY
-            rhod = self.rhodamine_fn(self.bench.rhodamine_series())
-            cv = self.cv_fn(fault=False)
-            trustworthy = rhod["passed"] and cv["passed"]
-            # LEARN — a physically trustworthy measurement always trains the
-            # world model; the conformal gate decides promote vs. escalate.
-            if trustworthy:
-                self.wm.observe(x, fluor)
-            _, unc = self.wm.predict(x)
-            decision = conformal_gate(unc) if trustworthy else "ESCALATE"
-            bx, by = self.wm.best()
-            self.history.append(RoundLog(k, x, fluor, rhod["r2"], decision, bx, by))
-
+            record = self._execute_round(len(self.history) + 1, "seed", x0)
             if verbose:
-                print(f"[R{k:02d}] propose x={x:.3f}  fluor={fluor:.3f}  "
-                      f"Rhodamine R²={rhod['r2']:.4f} {'PASS' if rhod['passed'] else 'FAIL'}  "
-                      f"CV:{'ok' if cv['passed'] else 'FAULT'}  gate:{decision}  "
-                      f"best x={bx:.3f}")
+                self._print_round(record)
 
-            # converged only when the model is BOTH accurate and confident
-            # (a promoted result), not merely lucky on one reading.
-            if abs(bx - self.bench.x_star) <= self.tol and decision == "ACCEPT":
-                self.runs_used = k + 2   # + 2 seed probes
+        while len(self.history) < self.budget:
+            next_run_id = len(self.history) + 1
+
+            def feasible(candidate: float) -> bool:
+                candidate_plan = self.assay.plan(next_run_id, "optimize", candidate)
+                return bool(self.assay.verify(candidate_plan)["passed"])
+
+            record = self._execute_round(
+                next_run_id,
+                "optimize",
+                self.wm.propose(feasible_fn=feasible),
+            )
+            if verbose:
+                self._print_round(record)
+
+            if (
+                abs(record.best_x - self.bench.x_star) <= self.tol
+                and record.decision == "ACCEPT"
+            ):
+                self.runs_used = len(self.history)
+                self._stage_follow_up()
                 return self.history
 
-        self.runs_used = self.budget + 2
+        self.runs_used = len(self.history)
         return self.history
+
+    @staticmethod
+    def _print_round(record: RoundLog) -> None:
+        print(
+            f"[R{record.k:02d} {record.phase:8s}] {record.destination}  "
+            f"stock={record.stock_ul:5.1f}uL  diluent={record.diluent_ul:5.1f}uL  "
+            f"x={record.x:.3f}  signal={record.fluor:.3f}  "
+            f"Rhodamine R2={record.r2:.4f}  plan:PASS  "
+            f"gate:{record.decision}  best x={record.best_x:.3f}"
+        )
