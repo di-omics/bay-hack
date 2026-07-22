@@ -29,23 +29,27 @@ def test_no_em_dashes_in_public_project_text():
     assert not violations, f"em dash found in: {violations}"
 
 
-def test_public_story_is_liquid_handling_first_and_complementary():
+def test_public_story_is_tem1_liquid_handling_first_and_complementary():
     readme = (ROOT / "README.md").read_text()
     site = (ROOT / "docs" / "index.html").read_text()
     for phrase in (
-        "Two world models close the liquid-handling loop",
+        "TEM-1 beta-lactamase",
         "Zeon's physical world model",
         "scientific world model",
-        "follow-up",
-        "H12",
+        "confirm expression",
+        "Z-prime",
+        "round 2",
+        "dose response",
     ):
         assert phrase.lower() in (readme + site).lower()
     assert "trust layer a vision-first stack still needs" not in site.lower()
-    assert "Prove refusal" in readme
-    assert "MEASUREMENT_ADAPTERS.md" in readme
-    assert "VERIFICATION_ADAPTERS.md" in readme
+    assert "Prove expression refusal" in readme
+    assert "TEM1_TRACK_A.md" in readme
+    assert "python -m bayhack.tem1_demo" in readme
+    assert "python -m bayhack.tem1_dashboard" in readme
     assert "python -m bayhack.preflight" in readme
-    assert "manual `hardware-validated` string cannot bypass" in readme
+    assert "No modeled value may be described as measured" in readme
+    assert "definitive IC50" in readme
 
 
 def test_pitch_numbers_match_the_benchmark():

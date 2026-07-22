@@ -25,6 +25,7 @@ from .measurements import (
     PlateCalibration,
 )
 from .safety import run_refusal
+from .tem1 import run_simulated_closed_loop, verify_receipt_integrity
 from .verification import CsvVolumeGate, JsonCvCheckpoint
 
 
@@ -86,6 +87,7 @@ def run_preflight(
 
     required_files = (
         "README.md",
+        "TEM1_TRACK_A.md",
         "ACCEPTANCE.md",
         "HOUSE_RULES.md",
         "HARDWARE_KIT.md",
@@ -95,6 +97,7 @@ def run_preflight(
         "bayhack/assay.py",
         "bayhack/loop.py",
         "bayhack/safety.py",
+        "bayhack/tem1.py",
         "bayhack/verification.py",
     )
     missing = [name for name in required_files if not (ROOT / name).exists()]
@@ -165,6 +168,41 @@ def run_preflight(
     except Exception as exc:
         checks.append(PreflightCheck("benchmark", "FAIL", str(exc)))
 
+    try:
+        tem1 = run_simulated_closed_loop(seed=17)
+        expression = tem1["protein_synthesis"]["confirmation"]
+        rounds = tem1["rounds"]
+        tem1_ok = bool(
+            expression["passed"]
+            and len(rounds) == 2
+            and all(round_data["assay_qc"]["passed"] for round_data in rounds)
+            and all(
+                round_data["world_model"]["updated"] for round_data in rounds
+            )
+            and tem1["follow_up"]["executed"]
+            and tem1["follow_up"]["dose_response_monotonic"]
+            and verify_receipt_integrity(tem1)
+        )
+        checks.append(PreflightCheck(
+            "tem1-track-a-fallback",
+            "PASS" if tem1_ok else "FAIL",
+            "expression confirmed, two gated rounds, condition nominated",
+            {
+                "target": tem1["target"],
+                "expression_fold": expression["fold_over_background"],
+                "round1_z_prime": rounds[0]["assay_qc"]["z_prime"],
+                "round2_z_prime": rounds[1]["assay_qc"]["z_prime"],
+                "nominated_compound": tem1["follow_up"]["compound_id"],
+                "inhibition_50_factor": (
+                    tem1["follow_up"]["inhibition_50_factor_estimate"]
+                ),
+                "receipt_sha256": tem1["integrity"]["digest"],
+                "provenance": "modeled",
+            },
+        ))
+    except Exception as exc:
+        checks.append(PreflightCheck("tem1-track-a-fallback", "FAIL", str(exc)))
+
     seam_modules = {
         "plr-mcp": "plr_mcp",
         "plr-epigenome": "tipseq_plr",
@@ -175,12 +213,33 @@ def run_preflight(
         name: importlib.util.find_spec(module) is not None
         for name, module in seam_modules.items()
     }
-    seam_count = sum(seam_evidence.values())
+    sibling_paths = {
+        "plr-mcp": ROOT.parent / "plr-mcp",
+        "plr-epigenome": ROOT.parent / "plr-epigenome",
+        "labworld": ROOT.parent / "ml-bio-eval" / "lab-world-model",
+        "plr-lab-robot": ROOT.parent / "plr-lab-robot",
+    }
+    sibling_evidence = {
+        name: path.is_dir() for name, path in sibling_paths.items()
+    }
+    seam_available = {
+        name: seam_evidence[name] or sibling_evidence[name]
+        for name in seam_modules
+    }
+    seam_count = sum(seam_available.values())
     checks.append(PreflightCheck(
         "optional-repo-seams",
-        "PASS" if seam_count == len(seam_evidence) else "WARN",
-        f"{seam_count}/{len(seam_evidence)} optional seams importable",
-        seam_evidence,
+        "PASS" if seam_count == len(seam_available) else "WARN",
+        (
+            f"{seam_count}/{len(seam_available)} optional seams available; "
+            f"{sum(seam_evidence.values())} importable, "
+            f"{sum(sibling_evidence.values())} sibling checkouts"
+        ),
+        {
+            "importable": seam_evidence,
+            "sibling_checkout": sibling_evidence,
+            "available": seam_available,
+        },
     ))
 
     measurement_ready = False
@@ -278,6 +337,7 @@ def run_preflight(
         "pre-act-refusal",
         "simulation-fallback",
         "benchmark",
+        "tem1-track-a-fallback",
     }
     core_ready = all(
         check.status == "PASS" for check in checks if check.name in core_names

@@ -1,98 +1,82 @@
-# Bring-your-own liquid-handling kit
+# Track A bring kit
 
-The portable demo is a six-run, two-component formulation on one 96-well plate.
-Each experiment mixes 40 uL in a destination well. The accepted well then sends
-20 uL to H12 as the Track A follow-up action.
+The organizers are supplying robots and protein synthesis kits. Bring tools
+that increase reliability and visibility. Do not bring unapproved biological
+materials, antibiotics, compounds, or assay reagents.
 
-## Pack this no matter what the venue provides
+## Definitely bring
 
-- Laptop, charger, USB-C hub, HDMI adapter, and a long charging cable
-- Phone tripod or small USB camera
-- Diffuse white LED light or compact light panel
-- White and black cards for camera exposure and color calibration
-- Two clear, flat-bottom, 96-well plates with lids, ideally 360 uL wells
-- One extra plate as a sealed fallback plate for the walk-around showcase
-- One P20 or P200 manual pipette as a rescue path, if you own a calibrated one
-- At least 48 compatible manual tips in clean racks
-- Six 1.5 mL tubes and two 15 mL tubes
-- DI water in a sealed, labeled tube or bottle
-- Food-grade dye in a sealed, labeled tube for the camera-color fallback
-- Nitrile gloves, absorbent bench pads, wipes, labels, and secondary containment
-- Painter's tape, a fine marker, zip ties, and a small ruler or caliper
-- Printed QR code for the repo and live site
+- Laptop and charger
+- USB-C hub and adapters needed by the laptop
+- HDMI adapter for the projector
+- Long charging cable and compact power bank
+- Notebook and two pens
+- Water bottle and an extra layer
+- Phone with free storage for video
+- Small phone tripod or clamp
+- Printed one-page pitch and repo QR code
+- Fine marker, removable labels, painter's tape, and a small ruler
+- Clean microfiber cloth and a few cable ties
 
-The working run uses 12 tips for six formulations and one more tip for the
-follow-up transfer. The volume qualification uses at least six more robot
-dispenses plus independently prepared standards. Bring at least 48 so one full
-qualification, one assay run, and one recovery do not become a crisis.
+## Useful visibility kit
 
-## Only bring these after the host confirms compatibility
+- Small diffuse white LED light
+- White and black cards for camera exposure checks
+- Neutral gray card if available
+- Compact USB camera only if it already works with the laptop
+- One clean, empty demonstration plate for the walk-around table
 
-- Robot-specific tip racks
-- A black or black-clear-bottom plate for fluorescence
-- Rhodamine B or any other fluorescence standard
-- Instrument-specific carriers, nests, adapters, or plate seals
-- Any chemical beyond food dye and water
+An empty plate is a visual prop and camera test object. Do not assume it is
+compatible with the venue reader or robot.
 
-Ask the host which liquid handler, pipetting end effector, reader, plate type,
-tip type, wavelengths, and chemical rules will be available. Robot tips and
-plate-reader optics are not universal.
+## Bring only after organizer confirmation
 
-If Rhodamine B is approved, bring only a small pre-diluted quantity, the current
-SDS, clear labels, and secondary containment. Follow the venue's PPE and waste
-rules. Do not bring live cells, clinical samples, biohazards, or unlabeled liquids.
+- Clear or black 96-well plates of the exact approved model
+- Compatible tip racks
+- Manual pipette and tips
+- Plate seals, reservoirs, tubes, or carriers
+- Any calibration dye or fluorescence standard
+- Any liquid beyond personal drinking water
 
-## Plate map
+Robot tips, labware geometry, reader optics, and plastics are not universal.
+Unapproved supplies can create more risk than value.
 
-Use one plate for the assay below and a second plate for the independent volume
-standards and replicated dispense test. Keep the third plate sealed as the
-walk-around fallback.
+## Do not bring
 
-| Position | Purpose | Suggested starting load |
-|---|---|---:|
-| A1 | assay stock | 250 uL |
-| A2 | diluent | 250 uL |
-| B1 onward | world-model proposals | 40 uL each |
-| H12 | accepted product | receives 20 uL |
+- TEM-1 enzyme, DNA templates, cell-free reactions, or live biological material
+- Antibiotics or inhibitor compounds
+- Unlabeled liquids or powders
+- Clinical, environmental, or human samples
+- Solvents, stains, or fluorescence reagents without venue approval
+- Homemade robot adapters that have not been reviewed for the workcell
 
-The deterministic showcase normally converges in six runs, so 250 uL in each
-source well provides comfortable headroom. If you change the assay volume or
-budget, calculate source demand before loading the plate.
+## Digital kit to cache locally
 
-## Three readout modes
+- This repository and all optional sibling repositories
+- A working Python environment
+- The TEM-1 dashboard loaded once with Wi-Fi disabled
+- A screen recording of the deterministic two-round run
+- The latest green preflight report
+- A blank on-site packet from `bayhack.tem1_cli init`
+- Offline copies of the official track guide and Zeon documentation
+- A PDF or screenshot of the pitch slide
 
-### Mode A: real plate reader
+## Physical evidence to collect
 
-Use the reader and approved reagent supplied or confirmed by the venue. Keep the
-camera aimed at the plate so the physical run stays visible to the audience.
+- Exact assay configuration reviewed by the organizer
+- Compound IDs, source wells, concentrations, units, and permitted metadata
+- Expression evidence CSV and method notes
+- Round 1 and round 2 plate plans
+- Raw reader CSV exports
+- Zeon simulation and physical execution traces
+- Photos of plate setup and completed plates
+- E-stop owner and human confirmation record
+- Final sealed trust receipt
+- A refusal receipt from the deterministic safety demonstration
 
-### Mode B: camera colorimetry
+## Pack strategy
 
-Use food dye plus water, lock camera exposure and white balance, and measure a
-fixed region of each well. Call this a colorimetric linearity gate, not a
-Rhodamine gate.
-
-### Mode C: no liquid handler
-
-Use the venue arm for plate movement or pipette manipulation, then execute the
-same verified plan manually with the rescue pipette. The scientific loop,
-measurement, trust receipt, and follow-up remain real.
-
-## Before leaving home
-
-- Run `python -m bayhack.preflight --output run_artifacts/preflight.json`
-- Run `python -m bayhack.demo --ledger run_artifacts/trust.json`
-- Run `python -m bayhack.dashboard` and load it once with Wi-Fi disabled
-- Save a screen recording of the full simulated run
-- Confirm the source plate, tips, camera, and HDMI adapter fit in one bag
-- Photograph the packed kit and the plate map
-
-## Files to collect on-site
-
-- `reader.csv` or one calibrated plate image per destination well
-- `volume-gate.csv` with independent standards and replicated robot dispenses
-- `cv_{well}_{run_id}.json` plus its image or venue trace ID
-- `trust.json` from the completed physical loop
-- `refusal.json` and `preflight.json` from the zero-motion checks
-
-See `MEASUREMENT_ADAPTERS.md` and `VERIFICATION_ADAPTERS.md` for exact formats.
+Keep the essential kit in one backpack. Put optional labware in a separate,
+clearly labeled tote so it can remain closed unless the organizers approve it.
+The winning edge is the software and evidence discipline, not the volume of
+equipment carried into the room.

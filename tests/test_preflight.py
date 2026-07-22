@@ -21,6 +21,9 @@ def test_default_preflight_proves_the_guaranteed_demo_without_motion():
     assert report["motion_commands_issued"] == 0
     assert checks["pre-act-refusal"]["status"] == "PASS"
     assert checks["simulation-fallback"]["status"] == "PASS"
+    assert checks["tem1-track-a-fallback"]["status"] == "PASS"
+    assert checks["tem1-track-a-fallback"]["evidence"]["target"] == \
+        "TEM-1 beta-lactamase"
     assert checks["physical-volume-gate"]["status"] == "WARN"
 
 
