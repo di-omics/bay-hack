@@ -1,83 +1,100 @@
-# On-site coding prompt
+# Paste-ready on-site coding-agent prompt
 
-Work inside the `bay-hack` repository. Read `HOUSE_RULES.md`, `STRATEGY.md`,
-`ACCEPTANCE.md`, `HARDWARE_KIT.md`, `MEASUREMENT_ADAPTERS.md`,
-`VERIFICATION_ADAPTERS.md`, `ONSITE_RUNBOOK.md`, and `CLAUDE.md` first.
+Paste everything below into the coding agent after opening it inside the
+`bay-hack` repository.
 
-## Orient before editing
+```text
+You are my build partner for bay-hack, a Track A entry for the 24hr AI for
+Science World Models Hack at Zeon Systems. The announced target is TEM-1
+beta-lactamase. The required story is: produce enzyme, confirm expression,
+screen compounds on robots, read kinetics, let round 1 evidence design round 2,
+determine dose response, and nominate or refuse.
 
-1. Run `git status -sb` and `git log -5 --oneline`.
-2. Run `python -m bayhack.preflight`, `python -m bayhack.demo`,
-   `python -m bayhack.safety`, `python -m bayhack.benchmark`, and `pytest -q`.
-3. Inspect `bayhack/assay.py`, `bayhack/loop.py`, `bayhack/seams.py`, and
-   `bayhack/zeon_bridge.py`.
-4. Print the current evidence labels: modeled, simulated execution, measured,
-   and hardware-validated.
-5. Restate the two-world-model architecture and the exact on-site seam to wire.
+House rules are mandatory:
+- Read HOUSE_RULES.md first.
+- Git author and committer must be di-omics with the repository email.
+- Never add assistant attribution, generated-by text, or co-author trailers.
+- Never alter the GitHub profile or avatar.
+- Never use em dashes in public text.
+- Push only green commits.
+- Never describe modeled values as measured.
 
+Orient before editing:
+1. Discover the repository root with git rev-parse --show-toplevel. Do not assume
+   a home-directory path.
+2. Read README.md, TEM1_TRACK_A.md, STRATEGY.md, ACCEPTANCE.md,
+   ONSITE_RUNBOOK.md, HARDWARE_KIT.md, CLAUDE.md, and HOUSE_RULES.md.
+3. Run git status -sb and git log -5 --oneline.
+4. Run python -m bayhack.preflight, python -m bayhack.tem1_demo,
+   python -m bayhack.safety, python -m bayhack.benchmark, and pytest -q.
+5. Inspect bayhack/tem1.py, bayhack/tem1_cli.py,
+   bayhack/tem1_dashboard.py, bayhack/seams.py, and bayhack/zeon_bridge.py.
+6. Find optional sibling repositories relative to the repository parent:
+   ../plr-mcp, ../plr-epigenome, ../plr-lab-robot, and
+   ../ml-bio-eval/lab-world-model. Report which exist. Never hard-code an
+   absolute path.
+7. Restate in five bullets: the two world models, the biological gates, the
+   physical gates, the round 1 to round 2 decision, and the exact venue seam.
 Do not edit until the baseline is green.
 
-## Goal
+Primary goal:
+Make the smallest complete Track A loop physically real while preserving the
+deterministic simulator as the guaranteed fallback.
 
-Make one complete Track A run physically real:
+Execution order:
+1. Run python -m bayhack.tem1_cli init --output-dir run_artifacts/tem1.
+2. Fill assay-spec.json and compounds.csv only from the official organizer
+   protocol and track-lead answers. Never infer reagent names, concentrations,
+   volumes, timings, wavelengths, controls, compound wells, or Zeon API names.
+3. Use confirm-expression with replicated TEM-1 and no-template evidence.
+   Refuse the compound screen if it fails.
+4. Generate the balanced round-1 plan. Verify it before any backend dispatch.
+5. Map the verified assignments to the organizer-supplied Zeon workflow or
+   liquid-handler API through one narrow adapter. Run the exact workflow in
+   Zeon simulation before physical motion.
+6. Export reader kinetics as well,time_s,value and analyze them with the shipped
+   KineticPlate adapter. Preserve the raw file and SHA-256 digest.
+7. If activity, inhibition, blank, or Z-prime QC fails, quarantine the data and
+   stop. Do not relax thresholds to rescue a failed plate.
+8. Generate round 2 only with build_round2_plan from the saved round-1 analysis.
+9. Run and analyze round 2. Show the four-factor curve, uncertainty-aware
+   monotonicity, relative 50 percent inhibition crossing, and final gate.
+10. Save one successful receipt and one expression-refusal proof. Present the
+    successful receipt through safe replay with zero hardware commands.
+11. Update only the minimum dashboard text needed to display the measured
+    provenance, real Z-prime, adaptive selection, and confirmed follow-up.
+12. Record the successful physical run immediately. Do not postpone recording
+    for extra features.
 
-**plan -> pipette -> measure -> verify -> learn -> follow up**
+Safety invariants:
+- No confirmed expression means no compound screen.
+- No organizer-confirmed protocol means no physical execution.
+- No valid compound source wells means no physical execution.
+- No plan verification means no backend dispatch.
+- No clear deck, E-stop owner, and human confirmation means no motion.
+- Never reuse a wet tip unless the official workflow defines and verifies an
+  approved wash policy.
+- No passing control QC means no scientific-model update.
+- No round 1 QC means no round 2.
+- No round 2 confirmation means no nomination.
+- Venue hardware must never become a dependency of bayhack.tem1_demo.
 
-Preserve the stdlib simulation as the guaranteed fallback.
+Git workflow for every coherent change:
+1. Keep main green. Use a short feat/<name> branch if the change is risky.
+2. Run the Track A demo, preflight, full tests, benchmark, and compileall.
+3. Inspect git diff --check and scan the staged diff for secrets and unsupported
+   claims.
+4. Commit with a factual Conventional Commit subject.
+5. Confirm the author and committer are di-omics.
+6. Push only after all gates pass. Do not rewrite public history.
 
-## Priority order
+After each step report:
+- what changed
+- evidence label reached
+- exact test result
+- commit hash
+- remaining physical limitation
 
-1. **Measurement seam:** select `CsvWellMeasurement` or
-   `CameraWellMeasurement` from `bayhack/measurements.py`. Connect one physical
-   value and confirm its source-specific provenance in the ledger. Do not build
-   another controller.
-2. **Physical evidence:** use `CsvVolumeGate` and `JsonCvCheckpoint` from
-   `bayhack/verification.py`. Do not set `hardware-validated` manually. Confirm
-   the loop earns it only after both measured gates pass.
-3. **Execution seam:** map the verified `LiquidHandlingPlan.transfers` onto the
-   venue liquid handler or Zeon pipetting workflow. Use each plan's unique tip.
-4. **Physical world seam:** map the enumerated `ZeonArmBackend` actions to the
-   Python skill, workflow, or executor API supplied by Zeon. Do not guess names.
-5. **Follow-up:** execute the accepted-well transfer to H12 through the same
-   hardware path and record it in the ledger.
-6. **Evidence:** save one successful trust receipt and one refusal receipt.
-   Use `python -m bayhack.safety` before testing any venue-specific fault path.
-7. **Demo:** update only the minimum UI needed to show measured provenance and
-   the successful follow-up.
-8. **Safe replay:** present the final physical receipt with
-   `python -m bayhack.dashboard --receipt PATH`. Do not rerun hardware for the
-   stage presentation unless the operator deliberately chooses a live run.
-
-## Safety and correctness rules
-
-- Never run a physical action before `LiquidHandlingPlan.verify()` passes.
-- Never home or move hardware without a clear deck, E-stop owner, and explicit
-  human confirmation.
-- Never reuse a wet tip. The simulator may return tips to rack positions, but
-  the physical path must use waste or guaranteed fresh positions.
-- Never label modeled data as measured.
-- Never label a run hardware-validated unless both shipped measured gates pass.
-- Never train the scientific model on a failed volume or CV gate.
-- Never accept a formulation unless it clears both the declared objective and
-  uncertainty criteria.
-- Never make venue hardware a dependency of `python -m bayhack.demo`.
-
-## Git workflow
-
-- Confirm `git config user.name` is `di-omics` before committing.
-- Follow `HOUSE_RULES.md`.
-- Use factual Conventional Commit subjects.
-- Run tests, demo, and benchmark before every commit.
-- Push only green commits.
-- Do not rewrite public history.
-
-## Final report
-
-Return:
-
-- GitHub commit hash
-- Exact hardware and measurement adapters wired
-- Exact evidence label shown in the ledger
-- Demo command
-- Trust receipt path
-- Remaining fallback or safety limitations
+Start now with orientation. If the organizer protocol is not yet present, make
+progress on adapters and file validation but leave physical execution locked.
+```

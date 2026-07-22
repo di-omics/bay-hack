@@ -1,121 +1,165 @@
-# On-site runbook
+# Track A on-site runbook
 
-## The win condition
+## Win condition
 
-Show two coupled world models:
+Show this with at least one real measured artifact and one real robot action:
 
-1. Zeon's physical world model tracks the bench, labware, robot, and state.
-2. bay-hack's scientific world model predicts assay response and chooses the
-   next liquid-handling experiment.
+**produce TEM-1 -> confirm expression -> screen round 1 -> read kinetics ->
+pass assay QC -> design round 2 from evidence -> confirm dose response -> act**
 
-The complete Track A loop is visible and literal:
+The best outcome is a real round 1 reader export that automatically changes the
+round 2 robot plate.
 
-**plan -> pipette -> measure -> verify -> learn -> follow up**
+## Before kickoff
 
-## 10:00 to 10:20: answer these before coding
+```bash
+git pull --ff-only
+python -m bayhack.preflight --output run_artifacts/preflight.json
+python -m bayhack.tem1_demo --receipt run_artifacts/tem1-trust.json
+pytest -q
+python -m bayhack.tem1_dashboard
+```
 
-- What arm and pipetting end effector are available?
-- Is there a liquid handler, or is the robot arm operating a pipette?
-- What Python skill, workflow, or executor API does Zeon expose?
-- Can we run the same workflow in Zeon's simulator before physical execution?
-- How are meshes, labware identities, coordinate frames, and state updates exposed?
-- Which plate reader or camera is available?
-- Which plate and tip definitions are already calibrated?
-- Are food dye and water allowed? Is Rhodamine B allowed?
-- Where are the E-stop, safe speed limit, waste, and human confirmation gate?
+Keep the dashboard loaded at `http://127.0.0.1:8010` as the guaranteed fallback.
 
-Write every answer into an issue or `run_artifacts/hardware_matrix.json`. Do not
-code against a guessed API.
+## 10:00 to 11:00: capture facts, do not code guesses
 
-## 10:20: choose the hardware lane
+Ask the track lead:
 
-| Available setup | Build lane |
-|---|---|
-| Liquid handler plus reader | Real pipetting and real quantitative readout |
-| Liquid handler plus camera | Real pipetting and camera colorimetry |
-| Robot arm plus pipette | Zeon physical world model plus bay-hack assay model |
-| Robot arm only | Real plate movement and follow-up, manual rescue pipetting |
-| Hardware unstable | Full simulator plus prerecorded physical fallback |
+- Which Sepia Bio kit and exact TEM-1 construct are supplied?
+- What is the official expression protocol and expected completion time?
+- How should expression be confirmed, and what quantitative threshold passes?
+- What substrate, wavelength or channel, read cadence, and kinetic window apply?
+- What exactly are the activity, inhibition, and blank controls?
+- Which compounds, solvents, source wells, stock concentrations, and metadata
+  are supplied?
+- What screen concentration and round 2 dose range are intended?
+- Which plate, reader, tips, liquid handler, and labware definitions are ready?
+- Which Zeon workflow or skill API performs an organizer-approved transfer?
+- Can the exact workflow run in simulation before physical execution?
+- Who owns the E-stop and the human motion confirmation?
+
+Record answers in `run_artifacts/tem1/hardware-matrix.json` and the generated
+`assay-spec.json`. Ask the lead to review the filled configuration before
+setting `protocol_confirmed_by_organizer` to true.
 
 ## 11:00 team formation
 
-Recruit only the missing capabilities:
+Recruit for two missing seams only:
 
-- One Zeon or robotics integrator who owns the physical adapter and E-stop
-- One camera or reader integrator who owns measurement calibration
-- Optional storyteller who protects the 90-second demo and records every run
+1. A Zeon or robotics integrator who owns simulation, the physical adapter, and
+   E-stop coordination.
+2. A reader or assay teammate who owns expression evidence, plate-reader export,
+   controls, and the kinetic window.
 
-Di owns the assay, PyLabRobot path, scientific world model, and final pitch.
+Di owns the liquid-handling plan, PyLabRobot and MCP path, scientific model,
+evidence gates, dashboard, and final pitch.
 
 Recruit line:
 
-> I have a verified liquid-handling loop running now. A scientific world model
-> chooses each well, Physical MCP executes it, Rhodamine or camera data verifies
-> it, and the accepted result moves downstream. I need one person on Zeon's
-> physical world model and one on measurement. We will couple both models live.
+> I have the complete TEM-1 Track A loop running now: expression gate, balanced
+> compound plate, kinetic analysis, Z-prime QC, uncertainty-aware selection, and
+> adaptive round 2 dose response. I need one teammate on Zeon's physical
+> executor and one on the real reader export. Our goal is a measured round 1
+> that automatically changes the next robot plate.
 
-## Build order
+## 11:00 to 12:00: orient and assign ownership
 
-1. Run `python -m bayhack.preflight` and keep the JSON report.
-2. Run `pytest -q` and `python -m bayhack.demo` unchanged.
-3. Run the dashboard and keep it open as the guaranteed demo.
-4. Calibrate one plate pose and one safe transfer, not an entire workcell.
-5. Select a shipped adapter from `MEASUREMENT_ADAPTERS.md` and connect one real
-   measurement to the ledger.
-6. Qualify the dispense method with `CsvVolumeGate` and one real visual
-   checkpoint with `JsonCvCheckpoint`. Follow `VERIFICATION_ADAPTERS.md`.
-7. Execute one full round with plan verification and a human confirmation gate.
-8. Repeat until the scientific model selects an accepted well.
-9. Execute the 20 uL follow-up transfer to H12.
-10. Record the successful physical run immediately.
-11. Restart the dashboard with `--receipt run_artifacts/trust.json` for a safe
-   stage replay that never moves hardware.
-12. Only then add the Zeon backend flourish, arm motion, or extra UI.
+1. Run the full green baseline.
+2. Create the unconfirmed event packet:
 
-## Two-minute safety rehearsal
+   ```bash
+   python -m bayhack.tem1_cli init --output-dir run_artifacts/tem1
+   ```
 
-```bash
-python -m bayhack.preflight --output run_artifacts/preflight.json
-python -m bayhack.safety --output run_artifacts/refusal.json
-python -m bayhack.dashboard
-```
+3. Fill the compound map and assay configuration from organizer facts.
+4. Verify source wells and all physical protocol fields.
+5. Decide the smallest real hardware loop that can finish before dinner.
+6. Assign one owner to each of: assay, robot, reader, evidence, demo.
 
-On the dashboard, click **Prove refusal** first. Say: "The invalid tip assignment
-never reached the robot, never became a measurement, and never trained the
-scientific model." Then click **Run the loop** to show recovery and follow-up.
+## 12:00 to 3:00: first physical truth
+
+Priority order:
+
+1. Run or observe the cell-free expression step.
+2. Capture replicated expression evidence and the no-template control.
+3. Run `confirm-expression` before preparing the compound screen.
+4. In Zeon simulation, execute one control transfer and one candidate transfer.
+5. Confirm source, destination, tip policy, volume, deck pose, and waste behavior.
+6. Run the same two transfers physically at safe speed with a human gate.
+7. Export one reader kinetic trace and prove the parser accepts it.
+
+Do not attempt the full plate until those two wells and one real export work.
+
+## 3:00 to 6:00: round 1
+
+1. Generate `round1-plan.json` from the real compound library.
+2. Review the plate map with the assay and robot owners.
+3. Verify every source well and control definition.
+4. Run the plan in Zeon simulation.
+5. Execute physically after the human motion gate.
+6. Export `round1-reader.csv`.
+7. Analyze immediately.
+8. If Z-prime fails, stop and troubleshoot controls. Do not tune the code to
+   bless a failed plate.
+9. If QC passes, generate `round2-plan.json` from the saved analysis.
+10. Photograph the plate and save the robot and reader traces.
+
+## 7:00 to 10:00: round 2 and evidence freeze
+
+1. Review the measured compounds selected for round 2.
+2. Confirm the organizer-approved dose factors and source demand.
+3. Run round 2 in Zeon simulation.
+4. Execute and export the kinetic reader data.
+5. Analyze the curves and inspect monotonicity.
+6. Nominate only after QC and confirmation pass.
+7. Save the final receipt, source-file digests, photos, and video.
+8. Start the dashboard in safe receipt-replay mode.
+
+By 10:00 PM, freeze the stage path. Any later change must be reversible and must
+not alter the green simulator.
 
 ## Hard stop rules
 
-- Never execute a plan that failed volume, capacity, tip, or destination checks.
-- Never let a modeled value appear as measured in the dashboard or ledger.
-- Never reuse a wet tip. The current MCP simulator returns tips to rack positions;
-  use unique positions and wire a real waste drop before physical execution.
-- Never home or move real hardware until the deck is clear and the E-stop owner
-  explicitly confirms readiness.
-- Never let the Zeon integration become a dependency of the guaranteed demo.
+- No expression confirmation means no compound screen.
+- No organizer-confirmed protocol means no physical run.
+- No clear deck and E-stop owner means no motion.
+- No plan verification means no backend dispatch.
+- No fresh-tip or approved wash policy means no liquid transfer.
+- No passing controls means no model update.
+- No round 1 QC means no round 2.
+- No round 2 confirmation means no inhibitor nomination.
+- No modeled value may be presented as measured.
 
-## Saturday evening freeze
+## Fallback ladder
 
-By dinner, require one complete recorded run. By 10:00 PM, freeze the demo path.
-After that, changes must be reversible and cannot alter the green simulator path.
-Robots stop at midnight, so do not postpone physical recording.
+1. **Best:** real liquid handling, real kinetic reader, real adaptive round 2.
+2. **Strong:** real round 1 liquid handling and reader, modeled round 2 replay.
+3. **Good:** real expression or reader artifact plus Zeon simulation and the
+   complete deterministic loop.
+4. **Guaranteed:** deterministic two-round dashboard, refusal proof, sealed
+   receipt, and generic liquid-handling fallback.
 
-## Sunday
+Never hide which level was achieved.
 
-- 9:00 AM: run the full demo from a fresh terminal
-- 11:00 AM: freeze code and generate the final trust receipt
+## Sunday schedule
+
+- 8:00 AM: fresh-machine rehearsal and evidence audit
+- 9:00 AM: fix only demo-blocking defects
+- 10:30 AM: freeze code and final receipt
+- 11:00 AM: update slide with the exact measured facts
 - 12:00 PM: rehearse the 90-second pitch three times
-- 1:00 PM: record final fallback video and take plate photos
-- 2:00 PM: submit early
-- 3:30 PM: walk-around mode, dashboard open, physical plate visible
-- 4:30 PM: live demo with the simulator already loaded behind it
+- 1:00 PM: record final fallback and photograph the physical plate
+- 2:00 PM: submit before the 2:30 PM deadline
+- 3:30 PM: dashboard in receipt-replay mode, plate visible beside it
+- 4:30 PM: pitch from the frozen path
 
-## 90-second spine
+## Final pre-demo check
 
-1. **Problem:** motion is not the same as trustworthy science.
-2. **Scientific model:** it chooses the next formulation under uncertainty.
-3. **Physical model:** Zeon keeps the robot and bench state aligned with reality.
-4. **Live run:** show concrete wells, volumes, measurement, and shrinking search.
-5. **Proof:** show the Rhodamine or colorimetric gate and the trust receipt.
-6. **Follow-up:** move 20 uL from the accepted well to H12.
-7. **Close:** two world models, one physically verified scientific loop.
+```bash
+python -m bayhack.preflight --output run_artifacts/final-preflight.json
+pytest -q
+python -m bayhack.tem1_dashboard --receipt run_artifacts/tem1-trust.json
+```
+
+Confirm the projected slide says only what the evidence supports.

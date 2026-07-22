@@ -1,137 +1,170 @@
 # bay-hack winning strategy
 
-## Track
+## Pick Track A
 
-Choose **Track A: close the loop with robotics**.
+The announced challenge is a direct fit for di-omics:
 
-The project is liquid-handling-first and maps directly to all four required
-verbs:
+**produce TEM-1 beta-lactamase, prove expression, screen inhibitors with
+robotics, read the assay, let round 1 sharpen round 2, and determine dose
+response.**
 
-1. **Planning:** compile the goal and verify concrete wells, volumes, and tips.
-2. **Robotic execution:** run the formulation through Physical MCP and the
-   available liquid handler or pipetting arm.
-3. **Measurement:** use a plate reader or camera, then apply volume and CV gates.
-4. **Follow-up:** transfer 20 uL from the accepted well to H12.
+The entry should stay liquid-handling first. Robotic arm motion is useful only
+when it advances this experimental loop.
 
-## The strongest framing
+## The winning thesis
 
-The winning story is not that one world model replaces another. It is that two
-world models solve different parts of the same scientific loop:
+> A moving robot is not autonomous science. The loop becomes autonomous only
+> when physical evidence is trustworthy enough to choose the next experiment.
 
-- **Zeon's physical world model** represents geometry, equipment, labware,
-  motion, and changing physical state.
-- **bay-hack's scientific world model** predicts assay response, represents
-  uncertainty, and selects the next liquid-handling experiment.
+bay-hack couples two world models:
 
-The physical model answers, "Can the robot execute this safely in the current
-world?" The scientific model answers, "Which experiment should the robot run
-next?" The trust ledger joins their evidence.
+- Zeon's physical world model tracks geometry, labware, robot state, and safe
+  execution.
+- bay-hack's scientific world model tracks expression evidence, assay controls,
+  inhibition, uncertainty, dose response, and the next plate.
+
+The winning moment is not a chart. It is round 2 changing because of round 1
+data, then a confirmed condition causing a visible follow-up decision.
+
+## Why this can beat broader projects
+
+1. **Exact challenge fit:** every announced Track A verb is visible.
+2. **Real liquid handling:** wells, replicates, controls, source positions, and
+   dose factors are concrete.
+3. **Scientific refusal:** failed expression or failed Z-prime blocks learning
+   and the next round.
+4. **Adaptive evidence:** round 1 selects the compounds and doses in round 2.
+5. **Honest provenance:** modeled and measured values cannot be confused.
+6. **Stage reliability:** a sealed receipt can replay the physical result with
+   zero robot motion.
+7. **Strong personal fit:** di-omics already ships PyLabRobot, Physical MCP,
+   lab-automation verification, and autonomous-omics work.
 
 ## Demo spine
 
-Use one plate and one visible assay. Do not demo every supporting repository.
+Use the TEM-1 dashboard, one plate, and one real evidence file. Do not tour every
+repository.
 
-1. Show the 40 uL plate plan: A1 stock, A2 diluent, B1 onward proposals.
-2. Click **Prove refusal**. A reused tip is rejected with zero robot commands.
-3. Run two seed wells. Both pass plan, Rhodamine or colorimetric, and CV gates.
-4. Let the scientific model choose the next formulations.
-5. Show the response and uncertainty improve while concrete volumes remain visible.
-6. Land on ACCEPT only after the objective and uncertainty criteria both pass.
-7. Open the trust receipt and point to `measurement.provenance`.
-8. Execute the 20 uL follow-up from the accepted well to H12.
-9. If the Zeon adapter is live, show the physical model execute the same action.
+1. Point to the seven-step pipeline.
+2. Click **Prove expression refusal**.
+3. Say that failed expression caused zero compound reads, model updates, round 2
+   plans, and robot commands after failure.
+4. Run the successful two-round path.
+5. Point to activity, inhibition, and blank controls across the plate.
+6. Point to round 1 Z-prime and measurement provenance.
+7. Show the conservative rank: inhibition minus one standard error.
+8. Show the top measured candidates returning at four dose factors.
+9. Point to the monotonicity gate and relative 50 percent inhibition crossing.
+10. Show the final nomination and SHA-256 sealed receipt.
+11. If hardware is stable, execute or show the matching Zeon workflow.
 
-## 90-second script
+## 90-second pitch
 
-**0:00 to 0:12**
+**0:00 to 0:15**
 
-"A moving robot is not yet autonomous science. The experiment only counts when
-the physical result is trustworthy enough to update the next decision."
+"Antibiotic resistance is physical, noisy, and expensive. A robot that only
+executes a script cannot tell whether the enzyme was made, whether the assay
+worked, or what experiment should happen next."
 
-**0:12 to 0:28**
+**0:15 to 0:32**
 
-"bay-hack couples two world models. Zeon models the physical bench and safe
-execution. My scientific model predicts assay response and chooses the next
-liquid-handling experiment under uncertainty."
+"bay-hack couples two world models. Zeon represents the live bench and safe
+robot execution. My scientific model represents TEM-1 expression, inhibitor
+response, uncertainty, and the next plate."
 
-**0:28 to 0:58**
+**0:32 to 0:48**
 
-"Here is the literal plate plan: stock from A1, diluent from A2, 40 microliters
-per proposal, and a fresh tip for each liquid. Even the seed runs must pass the
-volume and camera gates before the model can learn."
+Click the refusal.
 
-Click **Prove refusal**, then run the dashboard. Point to zero robot commands,
-the seed rows, volumes, signal, objective threshold, and ACCEPT.
+"First, the protein signal fails against the no-template control. The system
+refuses the compound screen: zero compound wells, zero model updates, zero round
+2 plans, zero commands after failure. It will not turn background noise into an
+inhibitor claim."
 
-**0:58 to 1:15**
+**0:48 to 1:12**
 
-"It found the accepted formulation in about six runs instead of a 26-point
-grid. That saves about 800 microliters and 40 tips in this search. Every step is
-captured in a machine-readable trust receipt, including whether the signal was
-modeled or measured."
+Run the loop.
 
-**1:15 to 1:30**
+"Now expression passes. The robot runs replicated candidates and three control
+classes. Kinetic slopes clear the Z-prime gate. Round 1 ranks inhibition with
+uncertainty, then those observations design round 2 across four dose factors."
 
-Execute or show the follow-up transfer.
+**1:12 to 1:30**
 
-"Now the accepted well moves downstream. Plan, execute, measure, follow up.
-Two world models, one physically verified scientific loop. I'm Di. I build
-autonomous labs."
+"The final condition is nominated only after round 2 QC, a passing inhibition
+gate, and a monotonic confirmation curve. Every source file and the final
+receipt are hashed. Produce, verify, screen, learn, confirm, act. Two world
+models, one closed scientific loop. I'm Di. I build autonomous labs."
 
-## Priority order before the event
+## Priority order at the venue
 
-1. Keep `python -m bayhack.preflight`, the six-run simulator, and dashboard green.
-2. Rehearse camera colorimetry with food dye and the exact plate map.
-3. Rehearse the measured volume CSV and CV JSON formats with fixture files.
-4. Confirm venue liquid handler, tips, reader, wavelengths, and chemical policy.
-5. Record one complete physical fallback run at home if possible.
-6. Rehearse the pitch with the plate in hand.
-7. On-site, connect one real measurement before attempting extra robotics.
-8. Earn `hardware-validated` from both measured gates before adding flourishes.
-9. Freeze the path by Saturday evening and record it before robots stop.
+1. Get the official protocol and compound map into `run_artifacts/tem1`.
+2. Confirm TEM-1 expression with real evidence.
+3. Export one real kinetic reader file in the shipped schema.
+4. Map one verified plate plan to the venue liquid handler or Zeon workflow.
+5. Complete round 1 with real controls and preserve the analysis.
+6. Generate round 2 from that analysis, not by hand.
+7. Complete one real round 2 confirmation if time permits.
+8. Seal and replay the successful receipt.
+9. Record the physical run immediately.
+10. Freeze before adding extra robotics.
+
+## Success ladder
+
+| Level | Evidence | Demo value |
+|---|---|---|
+| Bronze | Full deterministic two-round TEM-1 simulation | guaranteed coherent story |
+| Silver | Real organizer protocol plus one measured expression or reader file | challenge-specific evidence |
+| Gold | Real robot executes round 1 and real reader data designs round 2 | complete adaptive loop |
+| Win | Gold plus real round 2 confirmation, Zeon simulation-to-physical trace, sealed receipt, crisp pitch | end-to-end world-model science |
 
 ## What not to build
 
-- A second dashboard
-- A broad LLM planner with no physical consequence
+- A general chat agent with no assay consequence
+- A second scientific controller
 - A new robotics framework
-- A wet biology protocol that cannot finish inside the event
-- A complex multi-objective assay before one real read works
-- Any feature that makes the Zeon adapter mandatory for the fallback demo
+- A custom computer-vision stack before the reader export works
+- A full compound-property predictor with no organizer metadata
+- A wet protocol inferred from papers instead of the event instructions
+- A flourish that makes the deterministic fallback unreliable
 
-## Judge questions to be ready for
+## Judge questions
 
-**Why is this a world model?**
+**Where is the world model?**
 
-The scientific model predicts response and uncertainty for unrun experiments,
-then uses those imagined outcomes to choose the next physical action. Zeon's
-world model handles the complementary spatial and state representation.
+The scientific state predicts unrun assay conditions from observed response and
+uncertainty, then selects the next physical plate. Zeon models the complementary
+physical state and execution. The second round is generated from the first
+round's observations.
 
-**What is real today?**
+**What is real?**
 
-The loop, plate plan, gates, ledger, follow-up, simulator paths, and repository
-adapters are real code. The default numeric response is modeled. The first
-on-site goal is to replace it with one real camera or reader value.
+Say exactly which expression, robot, and reader artifacts are measured. The
+repository simulator is labeled modeled. Never blur them.
 
-**Why not just grid search?**
+**Why kinetic data?**
 
-The benchmark declares a 26-point baseline and reports search runs, reagent
-volume, tips, convergence, and error. The current modeled benchmark averages
-six runs, 240 uL, and 12 tips.
+The analysis estimates per-well reaction slopes. That makes the decision less
+dependent on a single endpoint and exposes control drift before learning.
 
-**What happens on a gate failure?**
+**Why Z-prime?**
 
-The measurement does not train the model. The run escalates, remains visible in
-the ledger, and the operator can retry or inspect the physical system.
+It tests whether the activity and inhibition controls are separated relative
+to their variation. A failed screen is quarantined instead of becoming model
+training data.
 
-**Does acceptance use the planted simulator optimum?**
+**How did round 1 sharpen round 2?**
 
-No. The planted optimum is used only to score the modeled benchmark. The
-controller accepts when the best trustworthy signal clears the declared assay
-objective and the uncertainty gate clears. A physical bench does not expose
-ground truth to the controller.
+The top conservative scores, mean inhibition minus one standard error, define
+which compounds return. Each returns across four configured dose factors.
 
-**What happens after acceptance?**
+**Is the 50 percent number an IC50?**
 
-The accepted well is transferred to H12 with a new tip. This is the required
-follow-up action, not a presentation-only banner.
+Until organizer concentrations and a fitted pharmacology model are supplied,
+call it a relative factor estimate for the 50 percent inhibition crossing. Do
+not overclaim it as a definitive IC50.
+
+**What happens after a failure?**
+
+The model does not update, no downstream plan is created, the evidence remains
+visible, and the operator gets a specific recovery target.
