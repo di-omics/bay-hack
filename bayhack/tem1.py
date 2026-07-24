@@ -32,9 +32,8 @@ from .assay import ROWS, is_well_name
 TRACK_NAME = "Track A: Close the Loop"
 TARGET_NAME = "TEM-1 beta-lactamase"
 CONTROL_WELLS = {
-    "activity_control": ("A1", "A12", "H1"),
-    "inhibition_control": ("A2", "A11", "H2"),
-    "blank": ("A3", "A10", "H3"),
+    "vehicle_control": ("A1", "A12", "H1"),
+    "no_enzyme_control": ("A2", "A11", "H12"),
 }
 ALL_WELLS = tuple(
     f"{row}{column}"
@@ -65,18 +64,32 @@ class TEM1AssaySpec:
 
     target: str = TARGET_NAME
     readout_mode: str = "kinetic_plate_reader"
-    expression_confirmation_method: str | None = None
+    expression_confirmation_method: str | None = "sfGFP fluorescence"
     expression_min_fold_over_background: float | None = None
     expression_max_cv_pct: float = 20.0
-    substrate_name: str | None = None
-    read_wavelength_nm: float | None = None
+    expression_instrument: str | None = None
+    expression_excitation_nm: float | None = 485.0
+    expression_emission_nm: float | None = 528.0
+    expression_reaction_volume_ul: float | None = None
+    expression_plate_type: str | None = None
+    expression_incubation_temperature_c: float | None = None
+    expression_incubation_s: float | None = None
+    expression_shaking_rpm: float | None = None
+    expression_shaking_orbit_mm: float | None = None
+    substrate_name: str | None = "nitrocefin"
+    read_wavelength_nm: float | None = 490.0
+    kinetic_interval_s: float | None = 30.0
+    kinetic_duration_s: float | None = None
     reaction_volume_ul: float | None = None
     assay_mix_volume_ul: float | None = None
     compound_volume_ul: float | None = None
     substrate_volume_ul: float | None = None
     preincubation_s: float | None = None
+    vehicle_control_composition: str | None = None
+    no_enzyme_control_composition: str | None = None
     protocol_confirmed_by_organizer: bool = False
     candidate_replicates: int = 2
+    round2_candidate_replicates: int = 2
     control_replicates: int = 3
     z_prime_min: float = 0.50
     hit_threshold_pct: float = 30.0
@@ -85,8 +98,10 @@ class TEM1AssaySpec:
 
     def verify(self) -> dict[str, Any]:
         reasons: list[str] = []
-        if self.candidate_replicates < 2:
-            reasons.append("candidate_replicates must be at least two")
+        if self.candidate_replicates < 1:
+            reasons.append("candidate_replicates must be at least one")
+        if self.round2_candidate_replicates < 2:
+            reasons.append("round2_candidate_replicates must be at least two")
         if self.control_replicates < 2:
             reasons.append("control_replicates must be at least two")
         if not -10.0 <= self.z_prime_min <= 1.0:
@@ -102,21 +117,70 @@ class TEM1AssaySpec:
             or self.expression_min_fold_over_background <= 1.0
         ):
             reasons.append("expression fold threshold must be finite and above one")
+        text_fields = (
+            self.expression_confirmation_method,
+            self.expression_instrument,
+            self.expression_plate_type,
+            self.substrate_name,
+            self.vehicle_control_composition,
+            self.no_enzyme_control_composition,
+        )
+        if any(value is not None and not value.strip() for value in text_fields):
+            reasons.append("configured protocol text fields must not be empty")
+        wavelengths = (
+            self.expression_excitation_nm,
+            self.expression_emission_nm,
+            self.read_wavelength_nm,
+        )
+        if any(
+            value is not None and (not math.isfinite(value) or value <= 0)
+            for value in wavelengths
+        ):
+            reasons.append("configured wavelengths must be finite and positive")
+        timing_values = (
+            self.expression_incubation_s,
+            self.kinetic_interval_s,
+            self.kinetic_duration_s,
+            self.preincubation_s,
+        )
+        if any(
+            value is not None and (not math.isfinite(value) or value <= 0)
+            for value in timing_values
+        ):
+            reasons.append("configured assay timings must be finite and positive")
         if not self.round2_dose_factors or any(
             not math.isfinite(value) or value <= 0
             for value in self.round2_dose_factors
         ):
             reasons.append("round2 dose factors must be finite and positive")
-        volumes = (
+        physical_values = (
+            self.expression_reaction_volume_ul,
+            self.expression_incubation_temperature_c,
+            self.expression_shaking_rpm,
+            self.expression_shaking_orbit_mm,
             self.reaction_volume_ul,
             self.assay_mix_volume_ul,
             self.compound_volume_ul,
             self.substrate_volume_ul,
         )
-        known_volumes = [value for value in volumes if value is not None]
-        if any(not math.isfinite(value) or value <= 0 for value in known_volumes):
-            reasons.append("confirmed protocol volumes must be finite and positive")
-        if all(value is not None for value in volumes):
+        known_physical_values = [
+            value for value in physical_values if value is not None
+        ]
+        if any(
+            not math.isfinite(value) or value <= 0
+            for value in known_physical_values
+        ):
+            reasons.append(
+                "configured protocol volumes and physical settings must be "
+                "finite and positive"
+            )
+        assay_volumes = (
+            self.reaction_volume_ul,
+            self.assay_mix_volume_ul,
+            self.compound_volume_ul,
+            self.substrate_volume_ul,
+        )
+        if all(value is not None for value in assay_volumes):
             component_total = (
                 float(self.assay_mix_volume_ul)
                 + float(self.compound_volume_ul)
@@ -132,13 +196,30 @@ class TEM1AssaySpec:
             "expression_min_fold_over_background": (
                 self.expression_min_fold_over_background
             ),
+            "expression_instrument": self.expression_instrument,
+            "expression_excitation_nm": self.expression_excitation_nm,
+            "expression_emission_nm": self.expression_emission_nm,
+            "expression_reaction_volume_ul": self.expression_reaction_volume_ul,
+            "expression_plate_type": self.expression_plate_type,
+            "expression_incubation_temperature_c": (
+                self.expression_incubation_temperature_c
+            ),
+            "expression_incubation_s": self.expression_incubation_s,
+            "expression_shaking_rpm": self.expression_shaking_rpm,
+            "expression_shaking_orbit_mm": self.expression_shaking_orbit_mm,
             "substrate_name": self.substrate_name,
             "read_wavelength_nm": self.read_wavelength_nm,
+            "kinetic_interval_s": self.kinetic_interval_s,
+            "kinetic_duration_s": self.kinetic_duration_s,
             "reaction_volume_ul": self.reaction_volume_ul,
             "assay_mix_volume_ul": self.assay_mix_volume_ul,
             "compound_volume_ul": self.compound_volume_ul,
             "substrate_volume_ul": self.substrate_volume_ul,
             "preincubation_s": self.preincubation_s,
+            "vehicle_control_composition": self.vehicle_control_composition,
+            "no_enzyme_control_composition": (
+                self.no_enzyme_control_composition
+            ),
         }
         missing = [name for name, value in required.items() if value is None]
         if not self.protocol_confirmed_by_organizer:
@@ -190,6 +271,8 @@ class Compound:
     source_well: str | None = None
     screen_concentration: float | None = None
     concentration_unit: str = "organizer_defined"
+    priority_score: float | None = None
+    priority_source: str = ""
     features: tuple[float, ...] = ()
 
     def verify(self) -> dict[str, Any]:
@@ -203,6 +286,10 @@ class Compound:
             or self.screen_concentration <= 0
         ):
             reasons.append("screen concentration must be finite and positive")
+        if self.priority_score is not None and not math.isfinite(
+            self.priority_score
+        ):
+            reasons.append("priority score must be finite")
         if any(not math.isfinite(value) for value in self.features):
             reasons.append("compound features must be finite")
         return {"passed": not reasons, "reasons": reasons}
@@ -231,6 +318,8 @@ def load_compounds(path: str | Path) -> list[Compound]:
             raw_concentration = str(row.get("screen_concentration", "")).strip()
             try:
                 concentration = float(raw_concentration) if raw_concentration else None
+                raw_priority = str(row.get("priority_score", "")).strip()
+                priority_score = float(raw_priority) if raw_priority else None
                 features = tuple(float(row[field]) for field in feature_fields)
             except (TypeError, ValueError) as exc:
                 raise TEM1Error(
@@ -245,6 +334,8 @@ def load_compounds(path: str | Path) -> list[Compound]:
                     str(row.get("concentration_unit", "")).strip()
                     or "organizer_defined"
                 ),
+                priority_score=priority_score,
+                priority_source=str(row.get("priority_source", "")).strip(),
                 features=features,
             )
             verdict = compound.verify()
@@ -271,6 +362,8 @@ def save_compounds(compounds: Iterable[Compound], path: str | Path) -> Path:
         "source_well",
         "screen_concentration",
         "concentration_unit",
+        "priority_score",
+        "priority_source",
         *[f"feature_{index + 1}" for index in range(max_features)],
     ]
     destination = Path(path)
@@ -288,6 +381,11 @@ def save_compounds(compounds: Iterable[Compound], path: str | Path) -> Path:
                     if compound.screen_concentration is not None else ""
                 ),
                 "concentration_unit": compound.concentration_unit,
+                "priority_score": (
+                    compound.priority_score
+                    if compound.priority_score is not None else ""
+                ),
+                "priority_source": compound.priority_source,
             }
             row.update({
                 f"feature_{index + 1}": value
@@ -362,11 +460,16 @@ class TEM1RoundPlan:
             candidate_groups[key] = candidate_groups.get(key, 0) + 1
         if "candidate" not in roles:
             reasons.append("round plan contains no candidate wells")
+        required_candidate_replicates = (
+            spec.candidate_replicates
+            if self.round_id == 1
+            else spec.round2_candidate_replicates
+        )
         for (compound_id, factor), count in candidate_groups.items():
-            if count < spec.candidate_replicates:
+            if count < required_candidate_replicates:
                 reasons.append(
                     f"{compound_id} at {factor:g}x needs "
-                    f"{spec.candidate_replicates} replicates"
+                    f"{required_candidate_replicates} replicates"
                 )
         spec_verdict = spec.verify()
         reasons.extend(spec_verdict["reasons"])
@@ -380,6 +483,28 @@ class TEM1RoundPlan:
         })
         physical_missing.extend(
             f"source_well:{compound_id}" for compound_id in missing_sources
+        )
+        missing_concentrations = sorted({
+            assignment.compound_id
+            for assignment in self.assignments
+            if assignment.role == "candidate"
+            and assignment.compound_id in compounds_by_id
+            and compounds_by_id[assignment.compound_id].screen_concentration is None
+        })
+        physical_missing.extend(
+            f"screen_concentration:{compound_id}"
+            for compound_id in missing_concentrations
+        )
+        missing_units = sorted({
+            assignment.compound_id
+            for assignment in self.assignments
+            if assignment.role == "candidate"
+            and assignment.compound_id in compounds_by_id
+            and compounds_by_id[assignment.compound_id].concentration_unit
+            == "organizer_defined"
+        })
+        physical_missing.extend(
+            f"concentration_unit:{compound_id}" for compound_id in missing_units
         )
         passed = not reasons
         return {
@@ -450,7 +575,19 @@ def select_initial_compounds(
     if not 1 <= n_select <= len(compounds):
         raise TEM1Error("round-1 selection size is outside the compound library")
     features = _standardized_features(compounds)
-    if not features:
+    priority_count = sum(
+        compound.priority_score is not None for compound in compounds
+    )
+    if priority_count == len(compounds):
+        selected = sorted(
+            compounds,
+            key=lambda compound: (
+                -float(compound.priority_score),
+                compound.compound_id,
+            ),
+        )[:n_select]
+        method = "top complete organizer or agent supplied priority score"
+    elif not features:
         if n_select == 1:
             indices = [0]
         else:
@@ -486,6 +623,13 @@ def select_initial_compounds(
         "method": method,
         "library_size": len(compounds),
         "selected": [compound.compound_id for compound in selected],
+        "priority_scores_present": priority_count,
+        "priority_scores_complete": priority_count == len(compounds),
+        "priority_sources": sorted({
+            compound.priority_source
+            for compound in compounds
+            if compound.priority_source
+        }),
         "measurement_used": False,
     }
 
@@ -518,9 +662,15 @@ def build_round1_plan(
     n_select: int | None = None,
 ) -> TEM1RoundPlan:
     compounds = list(compounds)
-    selected, rationale = select_initial_compounds(
-        compounds, n_select or len(compounds)
+    capacity = len(_candidate_wells()) // spec.candidate_replicates
+    selection_size = n_select if n_select is not None else min(
+        len(compounds), capacity
     )
+    selected, rationale = select_initial_compounds(
+        compounds, selection_size
+    )
+    rationale["plate_capacity"] = capacity
+    rationale["library_truncated_to_fit"] = len(compounds) > selection_size
     wells = _candidate_wells()
     required = len(selected) * spec.candidate_replicates
     if required > len(wells):
@@ -778,20 +928,21 @@ def analyze_round(
         role: dict(zip(("mean_slope", "sd_slope"), _mean_sd(values)))
         for role, values in control_values.items()
     }
-    activity_mean = control_stats["activity_control"]["mean_slope"]
-    activity_sd = control_stats["activity_control"]["sd_slope"]
-    inhibited_mean = control_stats["inhibition_control"]["mean_slope"]
-    inhibited_sd = control_stats["inhibition_control"]["sd_slope"]
-    blank_mean = control_stats["blank"]["mean_slope"]
-    dynamic_range = activity_mean - blank_mean
-    control_separation = abs(activity_mean - inhibited_mean)
+    vehicle_mean = control_stats["vehicle_control"]["mean_slope"]
+    vehicle_sd = control_stats["vehicle_control"]["sd_slope"]
+    no_enzyme_mean = control_stats["no_enzyme_control"]["mean_slope"]
+    no_enzyme_sd = control_stats["no_enzyme_control"]["sd_slope"]
+    dynamic_range = vehicle_mean - no_enzyme_mean
+    control_separation = abs(vehicle_mean - no_enzyme_mean)
     z_prime = (
-        1.0 - 3.0 * (activity_sd + inhibited_sd) / control_separation
+        1.0 - 3.0 * (vehicle_sd + no_enzyme_sd) / control_separation
         if control_separation > 1e-12 else -math.inf
     )
     qc_reasons: list[str] = []
     if dynamic_range <= 0:
-        qc_reasons.append("activity control is not above the blank")
+        qc_reasons.append(
+            "vehicle-control slope is not above no-enzyme background"
+        )
     if not math.isfinite(z_prime) or z_prime < spec.z_prime_min:
         qc_reasons.append(
             f"Z-prime {z_prime:.3f} is below {spec.z_prime_min:.3f}"
@@ -806,7 +957,8 @@ def analyze_round(
     candidate_results: list[dict[str, Any]] = []
     for (compound_id, factor), assignments in candidate_groups.items():
         inhibition_values = [
-            100.0 * (1.0 - (slopes[assignment.well] - blank_mean) / dynamic_range)
+            100.0
+            * (1.0 - (slopes[assignment.well] - no_enzyme_mean) / dynamic_range)
             if dynamic_range > 0 else math.nan
             for assignment in assignments
         ]
@@ -911,11 +1063,11 @@ def build_round2_plan(
         for factor in spec.round2_dose_factors
     ]
     wells = _candidate_wells()
-    required = len(conditions) * spec.candidate_replicates
+    required = len(conditions) * spec.round2_candidate_replicates
     if required > len(wells):
         raise TEM1Error("round-2 confirmation conditions do not fit on one plate")
     assignments = _control_assignments(spec)
-    for replicate in range(spec.candidate_replicates):
+    for replicate in range(spec.round2_candidate_replicates):
         offset = replicate * len(conditions)
         order = conditions if replicate % 2 == 0 else list(reversed(conditions))
         for index, (compound, factor) in enumerate(order):
@@ -1125,12 +1277,10 @@ def simulate_kinetic_plate(
     rng = random.Random(seed)
     values: dict[str, list[tuple[float, float]]] = {}
     for assignment in plan.assignments:
-        if assignment.role == "blank":
-            slope = 0.015
-        elif assignment.role == "activity_control":
+        if assignment.role == "vehicle_control":
             slope = 0.82
-        elif assignment.role == "inhibition_control":
-            slope = 0.065
+        elif assignment.role == "no_enzyme_control":
+            slope = 0.015
         else:
             maximum = SIMULATED_MAX_INHIBITION.get(assignment.compound_id or "", 0.0)
             factor = assignment.concentration_factor or 1.0
@@ -1168,7 +1318,7 @@ def simulate_expression_evidence(seed: int = 17) -> ExpressionEvidence:
 
 def run_simulated_closed_loop(seed: int = 17) -> dict[str, Any]:
     spec = TEM1AssaySpec(
-        expression_confirmation_method="modeled activity proxy",
+        expression_confirmation_method="modeled sfGFP fluorescence",
         expression_min_fold_over_background=2.0,
     )
     compounds = simulation_compounds()

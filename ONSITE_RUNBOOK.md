@@ -18,26 +18,42 @@ python -m bayhack.preflight --output run_artifacts/preflight.json
 python -m bayhack.tem1_demo --receipt run_artifacts/tem1-trust.json
 pytest -q
 python -m bayhack.tem1_dashboard
+zeon auth status
 ```
 
 Keep the dashboard loaded at `http://127.0.0.1:8010` as the guaranteed fallback.
+The organizers provide and pre-validate the Track A reagents, plates, seals, and
+equipment. Do not bring or substitute personal assay materials.
 
 ## 10:00 to 11:00: capture facts, do not code guesses
 
-Ask the track lead:
+The public guide already confirms OpenCFPS, TEM-1-sfGFP, nitrocefin, A490 reads
+every 30 seconds, vehicle controls, no-enzyme controls, a 95-compound DMSO
+library, the BioTek ELx808 reader, the Axygen PlateMax, and the Benchmark
+Incu-Mixer MP. Ask only for the missing operational facts:
 
-- Which Sepia Bio kit and exact TEM-1 construct are supplied?
-- What is the official expression protocol and expected completion time?
-- How should expression be confirmed, and what quantitative threshold passes?
-- What substrate, wavelength or channel, read cadence, and kinetic window apply?
-- What exactly are the activity, inhibition, and blank controls?
-- Which compounds, solvents, source wells, stock concentrations, and metadata
-  are supplied?
-- What screen concentration and round 2 dose range are intended?
-- Which plate, reader, tips, liquid handler, and labware definitions are ready?
-- Which Zeon workflow or skill API performs an organizer-approved transfer?
-- Can the exact workflow run in simulation before physical execution?
-- Who owns the E-stop and the human motion confirmation?
+- What event-scaled CFPS reaction volume, plate geometry, speed, orbit, and
+  incubation duration should we use?
+- Which instrument reads sfGFP, and what quantitative threshold passes the
+  expression gate?
+- What are the final assay volume, buffer, enzyme, compound, and nitrocefin
+  volumes?
+- What pre-incubation duration and total A490 kinetic window apply?
+- What DMSO percentage and exact compositions define the vehicle and no-enzyme
+  controls?
+- Is a known TEM-1 inhibitor supplied as an optional reference control?
+- Where is the 95-compound source map, with stock concentrations, units,
+  solvents, and any permitted feature metadata?
+- What round 1 screen concentration and round 2 dose range are intended?
+- Should round 1 favor 45 compounds in duplicate or 90 unique compounds in
+  singlicate, given the available plates and time?
+- Which Zeon project, workflow, world, objects, and skills are approved?
+- Do the source and destination plates expose well anchors, and what are their
+  object names?
+- What units and safe speeds do the electronic-pipette parameters use?
+- What tip policy and liquid-transfer resume behavior are approved?
+- How does the ELx808 export wells, timestamps, and A490 values?
+- Who owns the physical E-stop and the human motion confirmation?
 
 Record answers in `run_artifacts/tem1/hardware-matrix.json` and the generated
 `assay-spec.json`. Ask the lead to review the filled configuration before
@@ -74,20 +90,32 @@ Recruit line:
 
 3. Fill the compound map and assay configuration from organizer facts.
 4. Verify source wells and all physical protocol fields.
-5. Decide the smallest real hardware loop that can finish before dinner.
-6. Assign one owner to each of: assay, robot, reader, evidence, demo.
+5. Clone or sync the organizer's Zeon project and inspect its supplied skill
+   signatures, workflow, world, objects, and well anchors.
+6. Decide the smallest real hardware loop that can finish before dinner.
+7. Assign one owner to each of: assay, robot, reader, evidence, demo.
 
 ## 12:00 to 3:00: first physical truth
 
 Priority order:
 
-1. Run or observe the cell-free expression step.
-2. Capture replicated expression evidence and the no-template control.
-3. Run `confirm-expression` before preparing the compound screen.
-4. In Zeon simulation, execute one control transfer and one candidate transfer.
-5. Confirm source, destination, tip policy, volume, deck pose, and waste behavior.
-6. Run the same two transfers physically at safe speed with a human gate.
-7. Export one reader kinetic trace and prove the parser accepts it.
+1. Start the organizer-approved cell-free expression plate immediately. The
+   attached quick-start guide gives a 6-to-12-hour incubation range, although
+   sfGFP can become visible earlier. Use the track lead's event timing.
+2. While expression runs, map one vehicle transfer and one candidate transfer
+   into the organizer's native Zeon workflow.
+3. Guard every electronic-pipette and operator-message call with
+   `is_sim_mode()` on any simulation-capable skill.
+4. In Zeon simulation, execute the exact two-transfer workflow and confirm that
+   no physical pipette call was attempted.
+5. Confirm source, destination, well anchors, tip policy, volume unit, deck
+   pose, resume ledger, and waste behavior.
+6. Run the same two transfers physically at safe speed with a human gate and
+   the physical E-stop owner present.
+7. Export one ELx808 kinetic trace and prove the parser accepts it.
+8. Capture replicated sfGFP evidence and the no-template control when the
+   organizer-approved expression window completes.
+9. Run `confirm-expression`. Do not begin the compound screen if it fails.
 
 Do not attempt the full plate until those two wells and one real export work.
 
@@ -97,13 +125,14 @@ Do not attempt the full plate until those two wells and one real export work.
 2. Review the plate map with the assay and robot owners.
 3. Verify every source well and control definition.
 4. Run the plan in Zeon simulation.
-5. Execute physically after the human motion gate.
-6. Export `round1-reader.csv`.
-7. Analyze immediately.
-8. If Z-prime fails, stop and troubleshoot controls. Do not tune the code to
+5. Confirm Zeon's native liquid-transfer ledger is clear for this run.
+6. Execute physically after the human motion gate.
+7. Export `round1-reader.csv`.
+8. Analyze immediately.
+9. If Z-prime fails, stop and troubleshoot controls. Do not tune the code to
    bless a failed plate.
-9. If QC passes, generate `round2-plan.json` from the saved analysis.
-10. Photograph the plate and save the robot and reader traces.
+10. If QC passes, generate `round2-plan.json` from the saved analysis.
+11. Photograph the plate and save the robot and reader traces.
 
 ## 7:00 to 10:00: round 2 and evidence freeze
 
@@ -127,9 +156,12 @@ not alter the green simulator.
 - No plan verification means no backend dispatch.
 - No fresh-tip or approved wash policy means no liquid transfer.
 - No passing controls means no model update.
+- No confirmed pipette units means no electronic-pipette call.
 - No round 1 QC means no round 2.
 - No round 2 confirmation means no inhibitor nomination.
 - No modeled value may be presented as measured.
+- Pause and Stop are software controls, not the physical E-stop.
+- A successful simulation does not prove a physical move is safe.
 
 ## Fallback ladder
 

@@ -13,9 +13,11 @@ antibiotic-resistance target:
 6. Let round 1 evidence sharpen round 2.
 7. Determine a dose response and nominate a confirmed condition.
 
-The event page is the source of truth for the challenge. Organizer instructions
-at kickoff are the source of truth for all reagent names, concentrations,
-volumes, timings, wavelengths, control definitions, and hardware calls.
+The public guide confirms sfGFP expression, nitrocefin at A490, a 30-second
+kinetic cadence, vehicle controls, no-enzyme controls, and a 95-compound DMSO
+library. Organizer instructions at kickoff are the source of truth for the
+remaining scaled protocol and hardware details. See
+[OFFICIAL_TRACK_A_MATERIALS.md](OFFICIAL_TRACK_A_MATERIALS.md).
 
 ## The bay-hack answer
 
@@ -26,7 +28,7 @@ cell-free TEM-1 synthesis
   -> feature-diverse round 1 compound plan
   -> verified robotic liquid handling
   -> kinetic reader slopes
-  -> activity, inhibition, and blank control QC
+  -> vehicle and no-enzyme control QC
   -> Z-prime gate
   -> inhibition plus replicate uncertainty
   -> conservative ranking
@@ -49,10 +51,16 @@ return across organizer-configured dose factors.
 ## What is implemented now
 
 - An explicit, fail-closed `TEM1AssaySpec`
-- An organizer compound-library CSV with optional numeric `feature_*` columns
+- An organizer compound-library CSV with optional `priority_score`,
+  `priority_source`, and numeric `feature_*` columns
 - Feature-diverse first-round selection
 - Replicated candidate wells with spatial separation
-- Activity, inhibition, and blank controls placed across plate edges
+- Vehicle and no-enzyme controls placed across plate edges
+- A 95-row organizer packet that defaults to 45 compounds in duplicate, filling
+  one 96-well plate with six controls
+- An organizer-selectable breadth policy: set `candidate_replicates` to 1 to
+  screen 90 unique compounds plus six controls in round 1, while round 2 remains
+  replicated
 - Kinetic reader CSV ingestion with source path and SHA-256 digest
 - Per-well linear slope estimation
 - Control normalization and Z-prime assay QC
@@ -67,24 +75,35 @@ return across organizer-configured dose factors.
 - A deliberate failed-expression path with zero compound wells, model updates,
   round 2 plans, or robot commands after the failure
 
-## Do not guess the venue protocol
+## Published facts and remaining venue fields
 
-The default configuration intentionally refuses physical execution. Fill these
-fields only from the organizer's protocol:
+The default configuration pre-fills these published values:
 
-- expression confirmation method and pass threshold
-- substrate identity
-- reader wavelength or measurement channel
+- expression confirmation method: sfGFP fluorescence
+- expression guide wavelengths: Ex 485 nm and Em 528 nm
+- substrate: nitrocefin
+- activity read: A490
+- kinetic cadence: every 30 seconds
+
+Physical execution still refuses to start. Fill these only from the event
+protocol and track-lead confirmation:
+
+- expression pass threshold and actual instrument
+- event-scaled CFPS volume, shaking speed, and duration
+- total kinetic duration
 - total reaction volume
 - assay-mix, compound, and substrate volumes
 - preincubation time
+- exact vehicle and no-enzyme compositions
 - source well for every compound
 - confirmation that the organizer reviewed the configuration
 
 The following defaults are scientific software policy, not wet-lab protocol
-claims: two candidate replicates, three replicates for each control type,
-Z-prime minimum 0.50, hit threshold 30 percent, and four relative round 2 dose
-factors. Change them if the official protocol says otherwise.
+claims: two round 1 candidate replicates, two round 2 candidate replicates,
+three replicates for each control type, Z-prime minimum 0.50, hit threshold
+30 percent, and four relative round 2 dose factors. If the track lead approves a
+breadth-first primary screen, `candidate_replicates: 1` fits 90 unique compounds
+plus six controls on one plate. Round 2 still requires at least two replicates.
 
 ## Create the on-site packet
 
@@ -116,13 +135,15 @@ confirmation method produces. Do not mix units or methods in one file.
 ### Compound library
 
 ```csv
-compound_id,name,source_well,screen_concentration,concentration_unit,feature_1,feature_2
-C01,organizer name,A1,ORGANIZER_VALUE,ORGANIZER_UNIT,OPTIONAL,OPTIONAL
+compound_id,name,source_well,screen_concentration,concentration_unit,priority_score,priority_source,feature_1,feature_2
+C01,organizer name,A1,ORGANIZER_VALUE,ORGANIZER_UNIT,OPTIONAL_HIGHER_IS_BETTER,OPTIONAL_METHOD,OPTIONAL,OPTIONAL
 ```
 
-Feature columns are optional. When supplied, round 1 maximizes coverage in that
-feature space. Without them, the planner uses deterministic library coverage
-and makes no chemical-similarity claim.
+Priority and feature columns are optional. A complete `priority_score` column
+selects the highest organizer-approved or agent-generated scores and records
+their source. Without complete priority scores, numeric feature columns drive
+greedy farthest-point coverage. Without either, the planner uses deterministic
+library coverage and makes no chemical-similarity or activity-prediction claim.
 
 ### Kinetic reader export
 
@@ -139,7 +160,7 @@ Each assigned well needs at least three unique time points. `absorbance` or
 ## On-site command sequence
 
 ```bash
-# 1. Fill only organizer-confirmed protocol values and compound metadata.
+# 1. Confirm the published defaults, then fill only organizer-confirmed values.
 python -m bayhack.tem1_cli init --output-dir run_artifacts/tem1
 
 # 2. Prove enzyme production before any compound screen.
@@ -193,18 +214,22 @@ python -m bayhack.tem1_cli analyze \
 
 ## Questions to settle during kickoff
 
-1. What exact Sepia Bio kit and expression protocol are supplied?
-2. How is successful TEM-1 production confirmed, and what threshold passes?
-3. What substrate, read mode, wavelength, cadence, and kinetic window are used?
-4. What defines the activity, inhibition, and blank controls?
-5. Is a known TEM-1 inhibitor supplied for the inhibition control?
-6. Which compounds, source wells, stock concentrations, solvents, and metadata
+1. Confirm the OpenCFPS Z0001 event lot and the event-scaled reaction recipe,
+   volume, plate geometry, shaking speed, orbit, and incubation duration.
+2. Which instrument measures sfGFP, and what quantitative threshold passes?
+3. Confirm nitrocefin at A490 every 30 seconds and state the total kinetic
+   window.
+4. What exact DMSO percentage and composition define the vehicle controls?
+5. What exact composition defines the no-enzyme controls?
+6. Is a known TEM-1 inhibitor supplied as an optional reference control?
+7. Which compounds, source wells, stock concentrations, solvents, and metadata
    are supplied?
-7. What dose range and dilution pattern should round 2 use?
-8. Which liquid handler, plate reader, plate, tips, and labware definitions are
+8. What dose range and dilution pattern should round 2 use?
+9. Which liquid handler, plate reader, plate, tips, and labware definitions are
    calibrated?
-9. What Zeon skill or workflow call executes an organizer-approved transfer?
-10. Who owns the E-stop and confirms every transition from simulation to motion?
+10. What Zeon skill or workflow executes an organizer-approved transfer?
+11. What units do the electronic pipette volume and speed parameters use?
+12. Who owns the E-stop and confirms every transition from simulation to motion?
 
 ## Scientific references
 

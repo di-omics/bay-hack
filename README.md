@@ -9,6 +9,7 @@ Francisco.
 **[Live site](https://di-omics.github.io/bay-hack/)** ·
 **[Pitch slide](docs/slide.html)** ·
 **[Track A field guide](TEM1_TRACK_A.md)** ·
+**[Official materials](OFFICIAL_TRACK_A_MATERIALS.md)** ·
 **[On-site runbook](ONSITE_RUNBOOK.md)** ·
 **[Acceptance gates](ACCEPTANCE.md)** ·
 **[Bring kit](HARDWARE_KIT.md)**
@@ -76,9 +77,9 @@ claims.
 python -m bayhack.tem1_cli init --output-dir run_artifacts/tem1
 ```
 
-The generated assay configuration is intentionally incomplete. Physical
-execution remains locked until the official track protocol supplies the
-expression method, reagent and readout settings, component volumes, timing,
+The generated assay configuration pre-fills the published sfGFP, nitrocefin,
+A490, and 30-second-cadence facts. Physical execution remains locked until the
+track lead supplies the scaled reaction volumes, total kinetic window,
 compound source wells, and organizer confirmation.
 
 Then use the file workflow:
@@ -94,12 +95,17 @@ See [TEM1_TRACK_A.md](TEM1_TRACK_A.md) for exact schemas and commands.
 
 ## Why round 1 genuinely sharpens round 2
 
-- Round 1 uses organizer-supplied numeric features for greedy farthest-point
-  diversity when they exist. It falls back to deterministic library coverage
-  when they do not.
-- Kinetic slopes are normalized to activity and blank controls.
-- Activity and inhibition control separation must clear the configured Z-prime
-  threshold before the scientific model updates.
+- Round 1 uses a complete organizer-approved or agent-generated
+  `priority_score` column when present. Otherwise it uses organizer-supplied
+  numeric features for greedy farthest-point diversity, then falls back to
+  deterministic library coverage.
+- The default one-plate design uses 45 compounds in duplicate plus six
+  controls. If the track lead approves a breadth-first primary screen, one
+  configured switch fits 90 unique compounds plus six controls while preserving
+  replicated round 2 confirmation.
+- Kinetic slopes are normalized to vehicle and no-enzyme controls.
+- Vehicle and no-enzyme separation must clear the configured Z-prime threshold
+  before the scientific model updates.
 - Candidate ranking uses mean inhibition minus one standard error.
 - The top observed candidates return across four organizer-configured dose
   factors.
@@ -170,7 +176,7 @@ challenge.
 ## The di-omics composition
 
 The standard-library path always works. Lazy adapters can swap in the existing
-di-omics stack when sibling repositories are present:
+di-omics stack when local repositories are present:
 
 | Stage | Repository or adapter |
 |---|---|
@@ -182,25 +188,34 @@ di-omics stack when sibling repositories are present:
 | Zeon physical world | `bayhack/zeon_bridge.py` |
 | Track A assay model | `bayhack/tem1.py` |
 
-Expected sibling paths are relative to this repository, never hard-coded to a
-home directory:
+Preflight supports both a sibling layout and the categorized di-omics project
+layout. Every path is derived from the current repository root:
 
 ```text
 ../plr-mcp
 ../plr-epigenome
 ../plr-lab-robot
 ../ml-bio-eval/lab-world-model
+
+../../lab-automation/plr-mcp
+../../lab-automation/plr-epigenome
+../../lab-automation/plr-lab-robot
+../../research-and-ml/ml-bio-eval/lab-world-model
 ```
 
-The adapter discovers and verifies each path before use. Missing optional
-repositories do not break the Track A simulator.
+Preflight discovers and verifies each path before use. The adapters import the
+installed packages lazily. Missing optional repositories do not break the Track
+A simulator.
 
 ## Zeon bridge
 
-`bayhack/zeon_bridge.py::ZeonArmBackend` defines the narrow on-site seam. Map its
-enumerated operations to the organizer-supplied Zeon skill, workflow, or
-executor API. Do not guess API names before kickoff. The same plan must run in
-simulation before a human unlocks physical motion.
+`bayhack/zeon_bridge.py::ZeonArmBackend` is the dependency-free PyLabRobot
+simulation seam, not a guessed Zeon SDK. The physical implementation belongs
+inside the organizer's native Zeon project as Python skills and a workflow.
+Translate only a verified bay-hack plate plan, use object anchors rather than
+hard-coded coordinates, and run the exact workflow in simulation before a
+human unlocks physical motion. See
+[ZEON_NATIVE_INTEGRATION.md](ZEON_NATIVE_INTEGRATION.md).
 
 Zeon's public stack describes a live digital twin that represents geometry,
 physical state, and scientific state for workflow execution. bay-hack adds a
@@ -210,6 +225,8 @@ into the next plate.
 ## Supporting documents
 
 - [TEM1_TRACK_A.md](TEM1_TRACK_A.md): exact challenge workflow and CSV schemas
+- [OFFICIAL_TRACK_A_MATERIALS.md](OFFICIAL_TRACK_A_MATERIALS.md): organizer guide, Sepia protocol, and Zeon documentation review
+- [ZEON_NATIVE_INTEGRATION.md](ZEON_NATIVE_INTEGRATION.md): native Zeon skill and workflow handoff
 - [STRATEGY.md](STRATEGY.md): win condition, pitch, and priority order
 - [ONSITE_RUNBOOK.md](ONSITE_RUNBOOK.md): hour-by-hour build and demo freeze
 - [ACCEPTANCE.md](ACCEPTANCE.md): evidence and refusal contract

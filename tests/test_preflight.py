@@ -2,12 +2,34 @@
 import json
 
 from bayhack.loop import Bench, DBTLLoop
-from bayhack.preflight import run_preflight, save_preflight
+from bayhack.preflight import (
+    local_repo_candidates,
+    run_preflight,
+    save_preflight,
+)
 from test_verification import write_cv_json, write_volume_csv
 
 
 def by_name(report):
     return {check["name"]: check for check in report["checks"]}
+
+
+def test_repo_candidates_cover_sibling_and_categorized_layouts(tmp_path):
+    root = tmp_path / "Projects" / "apps-and-web" / "bay-hack"
+    candidates = local_repo_candidates(root)
+    assert root.parent / "plr-mcp" in candidates["plr-mcp"]
+    assert (
+        tmp_path / "Projects" / "lab-automation" / "plr-mcp"
+        in candidates["plr-mcp"]
+    )
+    assert (
+        tmp_path
+        / "Projects"
+        / "research-and-ml"
+        / "ml-bio-eval"
+        / "lab-world-model"
+        in candidates["labworld"]
+    )
 
 
 def test_default_preflight_proves_the_guaranteed_demo_without_motion():

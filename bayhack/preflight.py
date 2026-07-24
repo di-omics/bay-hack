@@ -32,6 +32,32 @@ from .verification import CsvVolumeGate, JsonCvCheckpoint
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def local_repo_candidates(root: Path = ROOT) -> dict[str, tuple[Path, ...]]:
+    """Return portable checkout locations without assuming a home directory."""
+    project_hub = root.parents[1]
+    return {
+        "plr-mcp": (
+            root.parent / "plr-mcp",
+            project_hub / "lab-automation" / "plr-mcp",
+        ),
+        "plr-epigenome": (
+            root.parent / "plr-epigenome",
+            project_hub / "lab-automation" / "plr-epigenome",
+        ),
+        "labworld": (
+            root.parent / "ml-bio-eval" / "lab-world-model",
+            project_hub
+            / "research-and-ml"
+            / "ml-bio-eval"
+            / "lab-world-model",
+        ),
+        "plr-lab-robot": (
+            root.parent / "plr-lab-robot",
+            project_hub / "lab-automation" / "plr-lab-robot",
+        ),
+    }
+
+
 @dataclass(frozen=True)
 class PreflightCheck:
     name: str
@@ -87,6 +113,8 @@ def run_preflight(
 
     required_files = (
         "README.md",
+        "OFFICIAL_TRACK_A_MATERIALS.md",
+        "ZEON_NATIVE_INTEGRATION.md",
         "TEM1_TRACK_A.md",
         "ACCEPTANCE.md",
         "HOUSE_RULES.md",
@@ -213,17 +241,16 @@ def run_preflight(
         name: importlib.util.find_spec(module) is not None
         for name, module in seam_modules.items()
     }
-    sibling_paths = {
-        "plr-mcp": ROOT.parent / "plr-mcp",
-        "plr-epigenome": ROOT.parent / "plr-epigenome",
-        "labworld": ROOT.parent / "ml-bio-eval" / "lab-world-model",
-        "plr-lab-robot": ROOT.parent / "plr-lab-robot",
+    repo_candidates = local_repo_candidates()
+    local_paths = {
+        name: next((path for path in paths if path.is_dir()), None)
+        for name, paths in repo_candidates.items()
     }
-    sibling_evidence = {
-        name: path.is_dir() for name, path in sibling_paths.items()
+    local_evidence = {
+        name: path is not None for name, path in local_paths.items()
     }
     seam_available = {
-        name: seam_evidence[name] or sibling_evidence[name]
+        name: seam_evidence[name] or local_evidence[name]
         for name in seam_modules
     }
     seam_count = sum(seam_available.values())
@@ -233,11 +260,15 @@ def run_preflight(
         (
             f"{seam_count}/{len(seam_available)} optional seams available; "
             f"{sum(seam_evidence.values())} importable, "
-            f"{sum(sibling_evidence.values())} sibling checkouts"
+            f"{sum(local_evidence.values())} local checkouts"
         ),
         {
             "importable": seam_evidence,
-            "sibling_checkout": sibling_evidence,
+            "local_checkout": local_evidence,
+            "local_paths": {
+                name: str(path) if path is not None else None
+                for name, path in local_paths.items()
+            },
             "available": seam_available,
         },
     ))
