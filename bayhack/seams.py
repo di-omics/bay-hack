@@ -5,7 +5,8 @@ uses the pure-sim stand-ins in loop.py. Install the real repos and these adapter
 call your actual code (all verified to run with NO hardware):
 
     pip install -e ../plr-mcp -e ../plr-epigenome -e ../plr-lab-robot
-    # labworld has no pyproject yet -> add ml-bio-eval/lab-world-model to PYTHONPATH
+    # or use the categorized paths under ../../lab-automation
+    # labworld has no pyproject yet, so add its directory to PYTHONPATH
 
 Every adapter lazy-imports its repo INSIDE the call, so this module (and the sim
 path) stay dependency-free. Honest caveats live next to each adapter -- read them;

@@ -50,7 +50,7 @@ repository.
 3. Say that failed expression caused zero compound reads, model updates, round 2
    plans, and robot commands after failure.
 4. Run the successful two-round path.
-5. Point to activity, inhibition, and blank controls across the plate.
+5. Point to vehicle and no-enzyme controls distributed across the plate.
 6. Point to round 1 Z-prime and measurement provenance.
 7. Show the conservative rank: inhibition minus one standard error.
 8. Show the top measured candidates returning at four dose factors.
@@ -85,9 +85,10 @@ inhibitor claim."
 
 Run the loop.
 
-"Now expression passes. The robot runs replicated candidates and three control
-classes. Kinetic slopes clear the Z-prime gate. Round 1 ranks inhibition with
-uncertainty, then those observations design round 2 across four dose factors."
+"Now expression passes. The robot runs replicated candidates with vehicle and
+no-enzyme controls. Kinetic slopes clear the Z-prime gate. Round 1 ranks
+inhibition with uncertainty, then those observations design round 2 across
+four dose factors."
 
 **1:12 to 1:30**
 
@@ -99,15 +100,17 @@ models, one closed scientific loop. I'm Di. I build autonomous labs."
 ## Priority order at the venue
 
 1. Get the official protocol and compound map into `run_artifacts/tem1`.
-2. Confirm TEM-1 expression with real evidence.
-3. Export one real kinetic reader file in the shipped schema.
-4. Map one verified plate plan to the venue liquid handler or Zeon workflow.
-5. Complete round 1 with real controls and preserve the analysis.
-6. Generate round 2 from that analysis, not by hand.
-7. Complete one real round 2 confirmation if time permits.
-8. Seal and replay the successful receipt.
-9. Record the physical run immediately.
-10. Freeze before adding extra robotics.
+2. Choose the organizer-approved round 1 policy: 45 compounds in duplicate or
+   90 unique compounds in singlicate.
+3. Confirm TEM-1 expression with real evidence.
+4. Export one real kinetic reader file in the shipped schema.
+5. Map one verified plate plan to the venue liquid handler or Zeon workflow.
+6. Complete round 1 with real controls and preserve the analysis.
+7. Generate round 2 from that analysis, not by hand.
+8. Complete one real round 2 confirmation if time permits.
+9. Seal and replay the successful receipt.
+10. Record the physical run immediately.
+11. Freeze before adding extra robotics.
 
 ## Success ladder
 
@@ -149,9 +152,9 @@ dependent on a single endpoint and exposes control drift before learning.
 
 **Why Z-prime?**
 
-It tests whether the activity and inhibition controls are separated relative
-to their variation. A failed screen is quarantined instead of becoming model
-training data.
+It tests whether the vehicle controls and no-enzyme background are separated
+relative to their variation. A failed screen is quarantined instead of
+becoming model training data.
 
 **How did round 1 sharpen round 2?**
 

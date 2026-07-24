@@ -25,11 +25,14 @@ model controls which action should happen next and whether evidence is trusted.
 
 1. Preserve `python -m bayhack.tem1_demo` as a dependency-free fallback.
 2. Preserve `python -m bayhack.demo` as the generic fallback.
-3. Do not guess venue protocol values or Zeon API names.
+3. Treat `OFFICIAL_TRACK_A_MATERIALS.md` as the confirmed baseline. Do not
+   guess the remaining venue protocol values, object names, or skill
+   parameters.
 4. Keep physical execution locked until `TEM1AssaySpec.physical_ready` is true.
 5. Confirm TEM-1 expression before compound screening.
 6. Verify every plate plan before backend dispatch.
-7. Require activity, inhibition, and blank controls in every assay round.
+7. Require vehicle and no-enzyme controls in every assay round. Add a known
+   inhibitor reference only if the organizers supply one.
 8. Quarantine failed Z-prime data. Never train or plan round 2 from it.
 9. Generate round 2 from saved round 1 observations.
 10. Preserve replicate uncertainty and source-specific provenance.
@@ -39,6 +42,12 @@ model controls which action should happen next and whether evidence is trusted.
 13. Preserve receipt integrity checks and zero-motion replay.
 14. Keep venue hardware behind lazy adapters.
 15. Push only green commits authored and committed by `di-omics`.
+16. Build physical execution inside the organizer's native Zeon project, not
+    through invented generic SDK calls.
+17. Guard every electronic-pipette and operator-message call with
+    `is_sim_mode()` on simulation-capable Zeon skills.
+18. Use Zeon's native liquid-transfer resume ledger and record a transfer only
+    after a successful dispense.
 
 ## Track A modules
 
@@ -48,6 +57,8 @@ model controls which action should happen next and whether evidence is trusted.
 - `bayhack/tem1_demo.py`: narrated deterministic fallback
 - `bayhack/tem1_dashboard.py`: stage and walk-around UI
 - `TEM1_TRACK_A.md`: exact schemas and field guide
+- `OFFICIAL_TRACK_A_MATERIALS.md`: source-grounded event facts and open fields
+- `ZEON_NATIVE_INTEGRATION.md`: exact Zeon skill and workflow handoff
 
 ## Supporting seams
 
@@ -57,15 +68,19 @@ model controls which action should happen next and whether evidence is trusted.
 - Scientific optimization: `ml-bio-eval/lab-world-model`
 - Physical world: organizer-supplied Zeon workflow or skill executor
 
-Expected sibling paths are relative to the current repository parent:
+Supported paths are derived from the current repository root:
 
 - `../plr-mcp`
 - `../plr-epigenome`
 - `../plr-lab-robot`
 - `../ml-bio-eval/lab-world-model`
+- `../../lab-automation/plr-mcp`
+- `../../lab-automation/plr-epigenome`
+- `../../lab-automation/plr-lab-robot`
+- `../../research-and-ml/ml-bio-eval/lab-world-model`
 
 Discover the repository root with `git rev-parse --show-toplevel`. Verify a
-sibling exists before importing it. Never hard-code an absolute home path.
+checkout exists before importing it. Never hard-code an absolute home path.
 
 ## Event evidence directory
 

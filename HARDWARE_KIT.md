@@ -1,8 +1,11 @@
 # Track A bring kit
 
-The organizers are supplying robots and protein synthesis kits. Bring tools
-that increase reliability and visibility. Do not bring unapproved biological
-materials, antibiotics, compounds, or assay reagents.
+The official Track A guide says the organizers supply and pre-validate the
+reagents, 96-well assay plates, gas-permeable seals, microcentrifuge tubes,
+reader, sealer, shaker, and Zeon robotic system. Bring tools that increase
+reliability and visibility. Do not bring or substitute biological materials,
+antibiotics, compounds, assay reagents, tips, plates, or other wet-lab
+consumables unless the track lead explicitly requests them.
 
 ## Definitely bring
 
@@ -24,12 +27,13 @@ materials, antibiotics, compounds, or assay reagents.
 - White and black cards for camera exposure checks
 - Neutral gray card if available
 - Compact USB camera only if it already works with the laptop
-- One clean, empty demonstration plate for the walk-around table
+- One clean, empty demonstration plate only if the organizers approve it as a
+  visual prop
 
 An empty plate is a visual prop and camera test object. Do not assume it is
 compatible with the venue reader or robot.
 
-## Bring only after organizer confirmation
+## Bring only if the organizer explicitly requests it
 
 - Clear or black 96-well plates of the exact approved model
 - Compatible tip racks
@@ -76,7 +80,7 @@ Unapproved supplies can create more risk than value.
 
 ## Pack strategy
 
-Keep the essential kit in one backpack. Put optional labware in a separate,
-clearly labeled tote so it can remain closed unless the organizers approve it.
-The winning edge is the software and evidence discipline, not the volume of
-equipment carried into the room.
+Keep the essential kit in one backpack. Leave optional labware at home unless
+the organizers request a specific item before the event. The winning edge is
+the software and evidence discipline, not the volume of equipment carried into
+the room.

@@ -19,10 +19,10 @@ may promote evidence to hardware-validated.
 |---|---|---|---|
 | Protocol | Organizer-supplied expression method, substrate, readout, volumes, timing, compound sources, and confirmation are present | physical execution blocked | fail-closed configuration implemented |
 | Protein synthesis | Replicated TEM-1 signal clears the organizer-defined fold threshold over no-template control and the configured CV limit | compound screen blocked | modeled path implemented, real evidence owed on-site |
-| Round plan | Valid wells, required replicates, all three control classes, known compound IDs, positive dose factors, source wells, and verified protocol | backend dispatch blocked | implemented and tested |
+| Round plan | Valid wells, required replicates, vehicle and no-enzyme controls, known compound IDs, positive dose factors, source wells, concentrations, units, and verified protocol | backend dispatch blocked | implemented and tested |
 | Physical action | Plan passed, deck is clear, E-stop owner is named, human confirms motion, tip policy is safe | no motion | software gate implemented, venue confirmation owed |
 | Kinetic evidence | Every assigned well has at least three unique time points and finite values | analysis blocked | CSV adapter implemented and tested |
-| Assay quality | Activity control exceeds blank and Z-prime clears the declared minimum | data quarantined, no model update | implemented and tested |
+| Assay quality | Vehicle-control slope exceeds no-enzyme background and Z-prime clears the declared minimum | data quarantined, no model update | implemented and tested |
 | Candidate quality | Inhibition clears the declared threshold and replicate SD stays below its limit | candidate held | implemented and tested |
 | Adaptive design | Round 1 QC passed and round 2 selection records the round 1 scores used | round 2 blocked | implemented and tested |
 | Dose response | Round 2 QC passed, a condition is a hit, and the curve is monotonic within one-standard-error tolerance | nomination blocked | implemented and tested |

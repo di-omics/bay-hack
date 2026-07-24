@@ -72,9 +72,8 @@ section{padding:70px 0;border-bottom:1px solid var(--line)}
 .plate-card{border:1px solid var(--line);border-radius:16px;padding:24px}
 .plate{display:grid;grid-template-columns:repeat(12,1fr);gap:5px;margin-top:18px}
 .well{aspect-ratio:1;border-radius:50%;display:grid;place-items:center;background:#eef3ef;border:1px solid #d8e4da;color:#6a7a6d;font:600 7px var(--mono)}
-.well.act{background:#dce8fb;border-color:#9ebbe9;color:#285ca7}
-.well.inh{background:#f7e6ba;border-color:#dfbd68;color:#8b6116}
-.well.blank{background:#f2f2f2;border-color:#cfcfcf}
+.well.vehicle{background:#dce8fb;border-color:#9ebbe9;color:#285ca7}
+.well.noenz{background:#f2f2f2;border-color:#cfcfcf}
 .well.c1{background:#b9dfbd;color:#285f31}.well.c2{background:#8dcb94;color:#194d22}.well.c3{background:#5cae5a;color:#fff}
 .legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px;color:var(--muted);font:500 10px var(--mono)}
 
@@ -150,7 +149,7 @@ footer .wrap{display:flex;justify-content:space-between;align-items:center;gap:2
     <p class="meta">di-omics · full-stack biologist building autonomous labs · July 25 to 26 · San Francisco</p>
     <div class="stats">
       <div class="stat"><b>2</b><span>adaptive rounds</span></div>
-      <div class="stat"><b>3</b><span>control classes</span></div>
+      <div class="stat"><b>95</b><span>compound library</span></div>
       <div class="stat"><b>Z′</b><span>assay quality gate</span></div>
       <div class="stat"><b>SHA-256</b><span>sealed evidence</span></div>
       <div class="stat"><b>0</b><span>commands after refusal</span></div>
@@ -209,16 +208,16 @@ footer .wrap{display:flex;justify-content:space-between;align-items:center;gap:2
         <h3 style="margin-top:16px">Controls distributed across the edges</h3>
         <p class="note">Candidate replicates are spatially separated. The physical plan stays locked until organizer protocol fields and compound source wells are confirmed.</p>
         <div class="plate" aria-label="modeled 96 well plate map">
-          <span class="well act">A1</span><span class="well inh">A2</span><span class="well blank">A3</span><span class="well">A4</span><span class="well">A5</span><span class="well">A6</span><span class="well">A7</span><span class="well">A8</span><span class="well">A9</span><span class="well blank">A10</span><span class="well inh">A11</span><span class="well act">A12</span>
+          <span class="well vehicle">A1</span><span class="well noenz">A2</span><span class="well c1">A3</span><span class="well">A4</span><span class="well">A5</span><span class="well">A6</span><span class="well">A7</span><span class="well">A8</span><span class="well">A9</span><span class="well c2">A10</span><span class="well noenz">A11</span><span class="well vehicle">A12</span>
           <span class="well c1">B1</span><span class="well c1">B2</span><span class="well c3">B3</span><span class="well">B4</span><span class="well">B5</span><span class="well">B6</span><span class="well">B7</span><span class="well">B8</span><span class="well">B9</span><span class="well">B10</span><span class="well">B11</span><span class="well">B12</span>
           <span class="well c2">C1</span><span class="well c1">C2</span><span class="well c1">C3</span><span class="well">C4</span><span class="well">C5</span><span class="well">C6</span><span class="well">C7</span><span class="well">C8</span><span class="well">C9</span><span class="well">C10</span><span class="well">C11</span><span class="well">C12</span>
           <span class="well c1">D1</span><span class="well c1">D2</span><span class="well c2">D3</span><span class="well">D4</span><span class="well">D5</span><span class="well">D6</span><span class="well">D7</span><span class="well">D8</span><span class="well">D9</span><span class="well">D10</span><span class="well">D11</span><span class="well">D12</span>
           <span class="well c3">E1</span><span class="well c1">E2</span><span class="well c1">E3</span><span class="well">E4</span><span class="well">E5</span><span class="well">E6</span><span class="well">E7</span><span class="well">E8</span><span class="well">E9</span><span class="well">E10</span><span class="well">E11</span><span class="well">E12</span>
           <span class="well c2">F1</span><span class="well c2">F2</span><span class="well">F3</span><span class="well">F4</span><span class="well">F5</span><span class="well">F6</span><span class="well">F7</span><span class="well">F8</span><span class="well">F9</span><span class="well">F10</span><span class="well">F11</span><span class="well">F12</span>
           <span class="well c2">G1</span><span class="well c2">G2</span><span class="well">G3</span><span class="well">G4</span><span class="well">G5</span><span class="well">G6</span><span class="well">G7</span><span class="well">G8</span><span class="well">G9</span><span class="well">G10</span><span class="well">G11</span><span class="well">G12</span>
-          <span class="well act">H1</span><span class="well inh">H2</span><span class="well blank">H3</span><span class="well">H4</span><span class="well">H5</span><span class="well">H6</span><span class="well">H7</span><span class="well">H8</span><span class="well">H9</span><span class="well">H10</span><span class="well">H11</span><span class="well">H12</span>
+          <span class="well vehicle">H1</span><span class="well c1">H2</span><span class="well c2">H3</span><span class="well">H4</span><span class="well">H5</span><span class="well">H6</span><span class="well">H7</span><span class="well">H8</span><span class="well">H9</span><span class="well">H10</span><span class="well">H11</span><span class="well noenz">H12</span>
         </div>
-        <div class="legend"><span>blue: activity</span><span>gold: inhibition</span><span>gray: blank</span><span>green: candidates</span></div>
+        <div class="legend"><span>blue: vehicle / max velocity</span><span>gray: no enzyme / background</span><span>green: candidates</span></div>
       </div>
     </div>
   </div>

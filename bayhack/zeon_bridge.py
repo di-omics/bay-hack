@@ -1,20 +1,20 @@
-"""Zeon bridge for coupling physical and scientific world models.
+"""PyLabRobot simulation seam for the Zeon integration.
 
 Zeon's physical world model tracks geometry, equipment, labware, and state.
-bay-hack's scientific world model selects the next experiment. This adapter shape
-maps verified PyLabRobot actions into the Python workflow or skill executor Zeon
-provides on-site.
+bay-hack's scientific world model selects the next experiment.
 
 Unlike a hand-waved stub, `ZeonArmBackend` RUNS TODAY in simulation: it subclasses
 plr_lr's `SimulationArmBackend` (a full `pylabrobot.arms.backend.SCARABackend`,
 N_JOINTS=5), so `ExperimentalSCARA(backend=ZeonArmBackend())` drives the complete
 pick / place / gripper choreography with no hardware. Every real-motion primitive
-is overridden to record a Zeon-SDK SEAM (`self.zeon_calls`) marking exactly where
-the on-site call goes. The demo beat "swap one backend and the same loop drives
-Zeon's arm" therefore executes live -- see `zeon_swap_selfcheck()`.
+is overridden to record a physical seam (`self.zeon_calls`).
 
-ON-SITE (build #1, once you can see Zeon's SDK): replace each `# TODO: self.sdk...`
-with the real call and drop the `super()` sim fallback. Nothing else changes.
+The official Zeon integration is not a generic SDK client or a SCARA backend.
+It is a Zeon project containing Python skills, workflows, worlds, objects, and
+anchors. Keep this module as the PyLabRobot choreography fallback. On-site, map
+verified TEM-1 assignments into the organizer's supplied Zeon skills as described
+in `ZEON_NATIVE_INTEGRATION.md`. Do not replace these methods with guessed SDK
+calls.
 
 This module imports pylabrobot lazily/guarded, so the pure-sim bay-hack path still
 runs without it installed.
@@ -38,10 +38,10 @@ class ZeonBridgeUnavailable(RuntimeError):
 
 
 class ZeonArmBackend(_Base):
-    """A PyLabRobot SCARA arm backend that targets Zeon's platform.
+    """A PyLabRobot SCARA backend that records venue integration seams.
 
-    Runs in simulation today (inherits SimulationArmBackend); on-site, fill the
-    marked seams with the real Zeon SDK. N_JOINTS = 5.
+    Runs in simulation today and is not the official Zeon hardware adapter.
+    N_JOINTS = 5.
     """
 
     def __init__(self, *args, sdk=None, host: str | None = None,
@@ -60,31 +60,31 @@ class ZeonArmBackend(_Base):
 
     # --- motion primitives: log the Zeon seam, then run the sim fallback -------
     async def home(self):
-        self._seam("home")                       # TODO: self.sdk.home()
+        self._seam("home")
         return await super().home()
 
     async def move_to(self, *a, **k):
-        self._seam("move_to")                    # TODO: self.sdk.move_cartesian(pose, speed=self.speed_cap)
+        self._seam("move_to")
         return await super().move_to(*a, **k)
 
     async def approach(self, *a, **k):
-        self._seam("approach")                   # TODO: self.sdk.approach(pose, access)
+        self._seam("approach")
         return await super().approach(*a, **k)
 
     async def pick_up_resource(self, *a, **k):
-        self._seam("pick_up_resource")           # TODO: self.sdk.grip_plate(...)
+        self._seam("pick_up_resource")
         return await super().pick_up_resource(*a, **k)
 
     async def drop_resource(self, *a, **k):
-        self._seam("drop_resource")              # TODO: self.sdk.release_plate(...)
+        self._seam("drop_resource")
         return await super().drop_resource(*a, **k)
 
     async def open_gripper(self, *a, **k):
-        self._seam("open_gripper")               # TODO: self.sdk.gripper(open=True)
+        self._seam("open_gripper")
         return await super().open_gripper(*a, **k)
 
     async def close_gripper(self, *a, **k):
-        self._seam("close_gripper")              # TODO: self.sdk.gripper(open=False)
+        self._seam("close_gripper")
         return await super().close_gripper(*a, **k)
 
 
