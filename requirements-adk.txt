@@ -1,0 +1,2 @@
+# Optional event agent. The deterministic Track A core remains standard library.
+google-adk==2.5.0

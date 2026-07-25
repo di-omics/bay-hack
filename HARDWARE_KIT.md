@@ -58,6 +58,9 @@ Unapproved supplies can create more risk than value.
 
 - This repository and all optional sibling repositories
 - A working Python environment
+- The isolated Google ADK environment with a local, uncommitted API key
+- A successful `python -m bayhack_adk.smoke` result
+- Validated 1XPB and 1ERO structure files plus their manifest
 - The TEM-1 dashboard loaded once with Wi-Fi disabled
 - A screen recording of the deterministic two-round run
 - The latest green preflight report

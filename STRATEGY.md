@@ -99,18 +99,21 @@ models, one closed scientific loop. I'm Di. I build autonomous labs."
 
 ## Priority order at the venue
 
-1. Get the official protocol and compound map into `run_artifacts/tem1`.
-2. Choose the organizer-approved round 1 policy: 45 compounds in duplicate or
+1. Find the booking system and reserve the earliest expression block.
+2. Get the official protocol and compound map into `run_artifacts/tem1`.
+3. Start the team's one active CFPS batch immediately.
+4. Choose the organizer-approved round 1 policy: 45 compounds in duplicate or
    90 unique compounds in singlicate.
-3. Confirm TEM-1 expression with real evidence.
-4. Export one real kinetic reader file in the shipped schema.
-5. Map one verified plate plan to the venue liquid handler or Zeon workflow.
-6. Complete round 1 with real controls and preserve the analysis.
-7. Generate round 2 from that analysis, not by hand.
-8. Complete one real round 2 confirmation if time permits.
-9. Seal and replay the successful receipt.
-10. Record the physical run immediately.
-11. Freeze before adding extra robotics.
+5. Confirm TEM-1 expression with real evidence.
+6. Reserve a screen block only after the organizer records the GFP pass.
+7. Export one real kinetic reader file in the shipped schema.
+8. Map one verified plate plan to the venue liquid handler or Zeon workflow.
+9. Complete round 1 with real controls and preserve the analysis.
+10. Generate round 2 from that analysis, not by hand.
+11. Complete one real round 2 confirmation if time permits.
+12. Seal and replay the successful receipt.
+13. Record the physical run immediately.
+14. Freeze before adding extra robotics.
 
 ## Success ladder
 
@@ -124,6 +127,8 @@ models, one closed scientific loop. I'm Di. I build autonomous labs."
 ## What not to build
 
 - A general chat agent with no assay consequence
+- An agent that computes its own assay numbers instead of calling the shipped
+  deterministic tools
 - A second scientific controller
 - A new robotics framework
 - A custom computer-vision stack before the reader export works
@@ -171,3 +176,16 @@ not overclaim it as a definitive IC50.
 
 The model does not update, no downstream plan is created, the evidence remains
 visible, and the operator gets a specific recovery target.
+
+**Why Google ADK?**
+
+ADK is the decision interface around six deterministic file tools. It can
+inspect inputs, gate expression, design plates, and analyze kinetics, but it
+cannot command hardware or override a failed result. This preserves a crisp
+agent story without placing an LLM inside the scientific or safety boundary.
+
+**Why not autonomously loop the agent while the plate incubates?**
+
+Physical evidence arrives asynchronously through shared 60-minute bookings and
+a human motion gate. Immutable files are durable state. The agent stops at each
+physical boundary and resumes only when a new measured artifact exists.

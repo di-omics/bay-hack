@@ -74,6 +74,21 @@ return across organizer-configured dose factors.
 - Tamper-evident closed-loop receipts
 - A deliberate failed-expression path with zero compound wells, model updates,
   round 2 plans, or robot commands after the failure
+- A Google ADK root agent with six deterministic function tools
+- A fixed results-file to decision to plate-map contract
+- Pinned, validated wild-type and inhibitor-bound TEM-1 structural references
+
+## Shared hardware order
+
+The updated guide makes hardware booking part of the experimental logic:
+
+1. Reserve the earliest 60-minute expression block.
+2. Start the team's single active CFPS batch.
+3. Leave the plate incubating while integration continues.
+4. Pass the organizer-defined GFP gate.
+5. Only then reserve a screen block. Reader time is included.
+
+The team should not wait for docking or UI polish before starting expression.
 
 ## Published facts and remaining venue fields
 
@@ -116,6 +131,16 @@ This creates:
 - `assay-spec.json`: unconfirmed fields remain null
 - `compounds.csv`: placeholder identifiers that must be replaced
 - `README.txt`: the on-site sequence
+
+The optional ADK agent wraps the same operations:
+
+```bash
+.venv/bin/python -m bayhack_adk.smoke
+.venv/bin/adk run bayhack_adk
+```
+
+See [ADK_PREP.md](ADK_PREP.md). The agent decides which deterministic tool to
+call. It does not perform its own numerical analysis or command hardware.
 
 ## Evidence schemas
 
@@ -211,6 +236,9 @@ python -m bayhack.tem1_cli analyze \
 - A nonmonotonic or non-hit confirmation means no final nomination.
 - Modeled values must never be described as measured.
 - Receipt replay must issue zero hardware commands.
+- No organizer-recorded GFP pass means no screen booking.
+- One team may not run two active expression batches.
+- An LLM response may not override a deterministic file verdict.
 
 ## Questions to settle during kickoff
 

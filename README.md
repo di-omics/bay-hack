@@ -11,6 +11,7 @@ Francisco.
 **[Track A field guide](TEM1_TRACK_A.md)** ·
 **[Official materials](OFFICIAL_TRACK_A_MATERIALS.md)** ·
 **[On-site runbook](ONSITE_RUNBOOK.md)** ·
+**[ADK prep](ADK_PREP.md)** ·
 **[Acceptance gates](ACCEPTANCE.md)** ·
 **[Bring kit](HARDWARE_KIT.md)**
 
@@ -92,6 +93,51 @@ python -m bayhack.tem1_cli round2-plan --help
 ```
 
 See [TEM1_TRACK_A.md](TEM1_TRACK_A.md) for exact schemas and commands.
+
+## Run the Google ADK decision agent
+
+The updated Track A guide asks teams to arrive with ADK installed and their
+prioritization and analysis exposed as function tools. The core remains
+dependency-free; ADK is an optional coordinator around the same deterministic
+file contract.
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements-adk.txt
+.venv/bin/python -m bayhack_adk.smoke
+cp .env.example .env
+# add GOOGLE_API_KEY locally, then:
+.venv/bin/adk run bayhack_adk
+```
+
+The six function tools initialize and inspect an event packet, gate expression,
+design round 1, analyze reader kinetics, and design round 2. Tool paths are
+restricted to `BAYHACK_RUN_DIR`. No ADK tool commands hardware or overrides a
+failed gate.
+
+The contract is:
+
+```text
+results file in -> deterministic decision -> verified plate map out
+```
+
+See [ADK_PREP.md](ADK_PREP.md) for the exact on-site prompts and browser UI
+command.
+
+## Validate the TEM-1 structure packet
+
+```bash
+python scripts/validate_tem1_structures.py
+```
+
+The repository pins RCSB 1XPB as a wild-type receptor reference and 1ERO as an
+inhibitor-bound pocket reference. SHA-256, entry identity, resolution, chain,
+residue count, and six catalytic-site residues are checked locally. These are
+validated experimental references, not prepared docking receptors. Docking
+scores may populate `priority_score` only after a versioned, library-wide
+preparation and scoring run.
+
+See [structures/README.md](structures/README.md).
 
 ## Why round 1 genuinely sharpens round 2
 
@@ -227,6 +273,8 @@ into the next plate.
 - [TEM1_TRACK_A.md](TEM1_TRACK_A.md): exact challenge workflow and CSV schemas
 - [OFFICIAL_TRACK_A_MATERIALS.md](OFFICIAL_TRACK_A_MATERIALS.md): organizer guide, Sepia protocol, and Zeon documentation review
 - [ZEON_NATIVE_INTEGRATION.md](ZEON_NATIVE_INTEGRATION.md): native Zeon skill and workflow handoff
+- [ADK_PREP.md](ADK_PREP.md): optional decision agent, function tools, and exact run commands
+- [structures/README.md](structures/README.md): validated TEM-1 references and docking-prep contract
 - [STRATEGY.md](STRATEGY.md): win condition, pitch, and priority order
 - [ONSITE_RUNBOOK.md](ONSITE_RUNBOOK.md): hour-by-hour build and demo freeze
 - [ACCEPTANCE.md](ACCEPTANCE.md): evidence and refusal contract

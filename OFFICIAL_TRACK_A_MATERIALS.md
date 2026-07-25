@@ -1,6 +1,6 @@
 # Official Track A materials
 
-Reviewed on 2026-07-23 from the organizer email, the public Track A guide, the
+Reviewed on 2026-07-24 from the organizer email, the updated Track A guide, the
 attached Sepia Bio protocol, and the complete Zeon documentation set.
 
 ## Primary sources
@@ -11,6 +11,10 @@ attached Sepia Bio protocol, and the complete Zeon documentation set.
 - [Zeon documentation index for coding agents](https://readme.zeonsystems.app/llms.txt)
 - [Sepia Bio OpenCFPS](https://sepiabio.com/products/opencfps-core-ecoli-z0001)
 - [Google Agent Development Kit](https://adk.dev/)
+- [Google ADK Python quickstart](https://adk.dev/get-started/python/)
+- [Google ADK function tools](https://adk.dev/tools-custom/function-tools/)
+- [RCSB PDB 1XPB](https://www.rcsb.org/structure/1XPB)
+- [RCSB PDB 1ERO](https://www.rcsb.org/structure/1ERO)
 
 The organizer and track lead remain the source of truth if any venue instruction
 differs from these public materials.
@@ -37,6 +41,15 @@ round 1 measured data
 The goal is to inhibit TEM-1 as much as possible and show the loop closing over
 two rounds. An isolated robot move, a generic chat agent, or a simulated chart
 without a physical evidence handoff is not the core Track A result.
+
+The updated guide defines the cross-layer contract explicitly:
+
+```text
+results file in -> agent decision -> plate map out
+```
+
+Stable files matter more than an elaborate agent graph because they make round
+1 and round 2 directly comparable.
 
 ## Confirmed scientific design
 
@@ -105,6 +118,46 @@ do not need to source them.
 The guide names example skills such as `plateshaker_open`,
 `epipette_aspirate`, and `platesealer_run`. Use the skill names in the actual
 event project rather than guessing the rest in advance.
+
+## Confirmed hardware booking constraints
+
+- All teams share the same testbed through 60-minute bookings.
+- A screen booking automatically includes the reader.
+- Plates may remain in the incubator while the team is off the active testbed.
+- One expression batch per team may be active at a time.
+- A team cannot reserve a compound-screen block until the GFP gate passes.
+
+The correct sequence is therefore:
+
+```text
+book expression -> start CFPS -> integrate while incubating -> pass GFP gate
+-> book screen -> run round 1 -> analyze -> run round 2
+```
+
+Starting expression is the critical path. Docking and interface work belong in
+the incubation window.
+
+## Confirmed pre-event preparation request
+
+The updated guide asks teams to:
+
+1. Install Google ADK and run a basic agent end to end.
+2. Wrap prioritization and analysis as ADK function tools.
+3. Obtain and validate a TEM-1 structure before the event.
+4. Decide which compound-prioritization signals to trust.
+5. Fix plate-map and analysis file formats.
+6. Preserve the results-file to decision to plate-map contract.
+
+bay-hack implements these without making an LLM part of the safety boundary.
+`bayhack_adk` exposes six file tools, `requirements-adk.txt` pins the event
+dependency, and `python -m bayhack_adk.smoke` exercises the complete
+deterministic tool handoff without an API key.
+
+The structure packet pins wild-type 1XPB as the receptor reference and 1ERO as
+an inhibitor-bound pocket reference. Both are checked by digest and catalytic
+residue identity. They remain experimental references rather than
+docking-ready receptors. Receptor preparation and scoring must be versioned
+after the organizer releases the compound structures.
 
 ## Sepia OpenCFPS quick-start facts
 
@@ -187,31 +240,40 @@ volume, plate geometry, orbit, speed, and incubation duration.
 | Honest evidence | Source path, SHA-256 digest, and modeled versus measured provenance |
 | Failure behavior | Failed expression or control QC blocks all downstream learning |
 | Stage-safe demo | Sealed receipt replay issues zero hardware commands |
+| Agent setup | Loadable Google ADK root agent with six fail-closed function tools |
+| File contract | Results file in, deterministic decision, verified plate map out |
+| Structure prep | Pinned wild-type and inhibitor-bound RCSB references with local validation |
+| Shared hardware | Slot-first runbook with GFP-before-screen booking gate |
 
 ## Facts still needed at kickoff
 
-1. Exact event-scaled CFPS reaction volume, plate, speed, orbit, and duration.
-2. Instrument and threshold used for sfGFP expression confirmation.
-3. Final assay volume and the assay-mix, compound, and nitrocefin volumes.
-4. DMSO percentage and exact vehicle-control composition.
-5. Exact no-enzyme-control composition.
-6. Pre-incubation duration and the total A490 kinetic window.
-7. Whether a known inhibitor control is supplied.
-8. Compound CSV, source plate type, source wells, stock concentrations, and
+1. Hardware booking URL or sheet and the first available expression block.
+2. Exact event-scaled CFPS reaction volume, plate, speed, orbit, and duration.
+3. Instrument and threshold used for sfGFP expression confirmation.
+4. Final assay volume and the assay-mix, compound, and nitrocefin volumes.
+5. DMSO percentage and exact vehicle-control composition.
+6. Exact no-enzyme-control composition.
+7. Pre-incubation duration and the total A490 kinetic window.
+8. Whether a known inhibitor control is supplied.
+9. Compound CSV, source plate type, source wells, stock concentrations, and
    permitted chemical metadata.
-9. Exact Zeon project, world, object names, well anchors, and provided skills.
-10. Confirmed pipette volume units, tip policy, and aspirate/dispense speeds.
-11. How the BioTek ELx808 export represents wells and timestamps.
-12. Who owns the emergency stop and approves the first physical transfer.
+10. The organizer's TBA robotics repository.
+11. Exact Zeon project, world, object names, well anchors, and provided skills.
+12. Confirmed pipette volume units, tip policy, and aspirate/dispense speeds.
+13. How the BioTek ELx808 export represents wells and timestamps.
+14. Who owns the emergency stop and approves the first physical transfer.
 
 ## Recommended event strategy
 
-1. Get the official Zeon project and compound map before writing any adapter.
-2. Confirm one real sfGFP evidence file.
-3. Make one vehicle transfer and one candidate transfer work in Zeon simulation.
-4. Repeat those two transfers physically with the emergency-stop owner present.
-5. Parse one real kinetic export before attempting the full plate.
-6. Run round 1, freeze its raw reader file, and generate round 2 automatically.
-7. Use Zeon's native resume ledger instead of inventing a second physical ledger.
-8. Record the real run as soon as it works.
-9. Freeze the demo path before adding docking, computer vision, or extra agents.
+1. Find the booking system and reserve the earliest expression block.
+2. Get the official Zeon project and compound map before writing any adapter.
+3. Start CFPS immediately, then use incubation time for integration.
+4. Confirm one real sfGFP evidence file and pass the organizer's GFP gate.
+5. Reserve the earliest screen block only after that gate passes.
+6. Make one vehicle transfer and one candidate transfer work in Zeon simulation.
+7. Repeat those two transfers physically with the emergency-stop owner present.
+8. Parse one real kinetic export before attempting the full plate.
+9. Run round 1, freeze its raw reader file, and generate round 2 automatically.
+10. Use Zeon's native resume ledger instead of inventing a second physical ledger.
+11. Record the real run as soon as it works.
+12. Freeze the demo path before adding docking, computer vision, or extra agents.

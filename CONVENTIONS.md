@@ -48,6 +48,16 @@ model controls which action should happen next and whether evidence is trusted.
     `is_sim_mode()` on simulation-capable Zeon skills.
 18. Use Zeon's native liquid-transfer resume ledger and record a transfer only
     after a successful dispense.
+19. Treat `bayhack_adk` as an optional coordinator. Function tools may read and
+    write only inside `BAYHACK_RUN_DIR`; they may not command hardware.
+20. A Google ADK response never overrides expression, plan, QC, provenance, or
+    physical-execution verdicts returned by deterministic code.
+21. Preserve `requirements-adk.txt`, `.env.example`, and the loadable
+    `bayhack_adk.agent.root_agent`. Never commit an API key.
+22. Treat `structures/1XPB.pdb` and `structures/1ERO.pdb` as pinned
+    experimental references. Do not call them docking-ready receptors.
+23. Respect the event booking order: expression block first, GFP gate second,
+    screen block third. The reader is included with the screen block.
 
 ## Track A modules
 
@@ -59,6 +69,11 @@ model controls which action should happen next and whether evidence is trusted.
 - `TEM1_TRACK_A.md`: exact schemas and field guide
 - `OFFICIAL_TRACK_A_MATERIALS.md`: source-grounded event facts and open fields
 - `ZEON_NATIVE_INTEGRATION.md`: exact Zeon skill and workflow handoff
+- `bayhack_adk/agent.py`: optional Google ADK root agent
+- `bayhack_adk/tools.py`: fail-closed file-contract function tools
+- `ADK_PREP.md`: installation, prompts, and operating rules
+- `bayhack/structure.py`: pinned experimental-structure validation
+- `structures/`: RCSB references, manifest, and docking-prep notes
 
 ## Supporting seams
 
@@ -102,8 +117,10 @@ python -m bayhack.tem1_demo
 python -m bayhack.demo
 python -m bayhack.safety
 python -m bayhack.benchmark
-pytest -q
-python -m compileall -q bayhack tests
+python scripts/validate_tem1_structures.py
+python -m bayhack_adk.smoke
+python -m pytest -q
+python -m compileall -q bayhack bayhack_adk tests
 git diff --check
 ```
 

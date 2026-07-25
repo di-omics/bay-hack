@@ -10,18 +10,38 @@ pass assay QC -> design round 2 from evidence -> confirm dose response -> act**
 The best outcome is a real round 1 reader export that automatically changes the
 round 2 robot plate.
 
+## The critical path
+
+Shared hardware, not coding, is the main constraint:
+
+1. Find the booking system during kickoff.
+2. Reserve the earliest 60-minute expression block.
+3. Start the single allowed CFPS batch immediately.
+4. Leave the plate in the incubator while integrating Zeon and the reader.
+5. Prove the organizer-defined GFP gate.
+6. Only then reserve the earliest screen block. Its reader time is included.
+7. Use that block for round 1, analyze immediately, and make round 2 visibly
+   different from the saved round 1 file.
+
+Do not delay expression for docking, dashboard work, or agent polish. The
+biological clock should run while the team codes.
+
 ## Before kickoff
 
 ```bash
 git pull --ff-only
 python -m bayhack.preflight --output run_artifacts/preflight.json
 python -m bayhack.tem1_demo --receipt run_artifacts/tem1-trust.json
-pytest -q
+python scripts/validate_tem1_structures.py
+python -m bayhack_adk.smoke
+python -m pytest -q
 python -m bayhack.tem1_dashboard
 zeon auth status
 ```
 
 Keep the dashboard loaded at `http://127.0.0.1:8010` as the guaranteed fallback.
+The ADK environment is ready when `.venv/bin/adk run bayhack_adk` loads the
+agent. A live turn requires the local Google API key in ignored `.env`.
 The organizers provide and pre-validate the Track A reagents, plates, seals, and
 equipment. Do not bring or substitute personal assay materials.
 
@@ -34,6 +54,9 @@ Incu-Mixer MP. Ask only for the missing operational facts:
 
 - What event-scaled CFPS reaction volume, plate geometry, speed, orbit, and
   incubation duration should we use?
+- Where is the 60-minute booking system, and what is the first available
+  expression block?
+- Who records that the GFP gate passed and unlocks a screen booking?
 - Which instrument reads sfGFP, and what quantitative threshold passes the
   expression gate?
 - What are the final assay volume, buffer, enzyme, compound, and nitrocefin
@@ -44,6 +67,7 @@ Incu-Mixer MP. Ask only for the missing operational facts:
 - Is a known TEM-1 inhibitor supplied as an optional reference control?
 - Where is the 95-compound source map, with stock concentrations, units,
   solvents, and any permitted feature metadata?
+- Where is the TBA robotics-skills and example-workflows repository?
 - What round 1 screen concentration and round 2 dose range are intended?
 - Should round 1 favor 45 compounds in duplicate or 90 unique compounds in
   singlicate, given the available plates and time?
@@ -71,6 +95,10 @@ Recruit for two missing seams only:
 Di owns the liquid-handling plan, PyLabRobot and MCP path, scientific model,
 evidence gates, dashboard, and final pitch.
 
+Before recruiting or opening an editor, reserve the earliest expression block.
+The reader is already included with a later screen block, so do not spend time
+trying to reserve it separately.
+
 Recruit line:
 
 > I have the complete TEM-1 Track A loop running now: expression gate, balanced
@@ -81,45 +109,54 @@ Recruit line:
 
 ## 11:00 to 12:00: orient and assign ownership
 
-1. Run the full green baseline.
-2. Create the unconfirmed event packet:
+1. Reserve the earliest expression block and write the slot time on the team
+   board.
+2. Run the full green baseline.
+3. Create the unconfirmed event packet:
 
    ```bash
    python -m bayhack.tem1_cli init --output-dir run_artifacts/tem1
    ```
 
-3. Fill the compound map and assay configuration from organizer facts.
-4. Verify source wells and all physical protocol fields.
-5. Clone or sync the organizer's Zeon project and inspect its supplied skill
+4. Fill the compound map and assay configuration from organizer facts.
+5. Verify source wells and all physical protocol fields.
+6. Clone or sync the organizer's Zeon project and inspect its supplied skill
    signatures, workflow, world, objects, and well anchors.
-6. Decide the smallest real hardware loop that can finish before dinner.
-7. Assign one owner to each of: assay, robot, reader, evidence, demo.
+7. Decide the smallest real hardware loop that can finish before dinner.
+8. Assign one owner to each of: assay, robot, reader, evidence, demo.
 
-## 12:00 to 3:00: first physical truth
+## Expression block and incubation window
 
 Priority order:
 
 1. Start the organizer-approved cell-free expression plate immediately. The
    attached quick-start guide gives a 6-to-12-hour incubation range, although
    sfGFP can become visible earlier. Use the track lead's event timing.
-2. While expression runs, map one vehicle transfer and one candidate transfer
+2. Confirm the plate may remain in the incubator after the active block ends.
+3. While expression runs, map one vehicle transfer and one candidate transfer
    into the organizer's native Zeon workflow.
-3. Guard every electronic-pipette and operator-message call with
+4. Guard every electronic-pipette and operator-message call with
    `is_sim_mode()` on any simulation-capable skill.
-4. In Zeon simulation, execute the exact two-transfer workflow and confirm that
+5. In Zeon simulation, execute the exact two-transfer workflow and confirm that
    no physical pipette call was attempted.
-5. Confirm source, destination, well anchors, tip policy, volume unit, deck
+6. Confirm source, destination, well anchors, tip policy, volume unit, deck
    pose, resume ledger, and waste behavior.
-6. Run the same two transfers physically at safe speed with a human gate and
+7. Run the same two transfers physically at safe speed with a human gate and
    the physical E-stop owner present.
-7. Export one ELx808 kinetic trace and prove the parser accepts it.
-8. Capture replicated sfGFP evidence and the no-template control when the
+8. Export one ELx808 kinetic trace and prove the parser accepts it.
+9. Load the compound library into the fixed CSV. Use a complete organizer or
+   computational `priority_score` only if all 95 compounds were processed under
+   the same versioned contract.
+10. Capture replicated sfGFP evidence and the no-template control when the
    organizer-approved expression window completes.
-9. Run `confirm-expression`. Do not begin the compound screen if it fails.
+11. Run `confirm-expression`. Do not request a compound-screen slot if it
+   fails.
+12. Save the confirmation file, show it to the booking owner, and reserve the
+   earliest available screen block only after approval.
 
 Do not attempt the full plate until those two wells and one real export work.
 
-## 3:00 to 6:00: round 1
+## First screen block: round 1
 
 1. Generate `round1-plan.json` from the real compound library.
 2. Review the plate map with the assay and robot owners.
@@ -127,14 +164,15 @@ Do not attempt the full plate until those two wells and one real export work.
 4. Run the plan in Zeon simulation.
 5. Confirm Zeon's native liquid-transfer ledger is clear for this run.
 6. Execute physically after the human motion gate.
-7. Export `round1-reader.csv`.
+7. Use the reader reservation included in the screen block and export
+   `round1-reader.csv`.
 8. Analyze immediately.
 9. If Z-prime fails, stop and troubleshoot controls. Do not tune the code to
    bless a failed plate.
 10. If QC passes, generate `round2-plan.json` from the saved analysis.
 11. Photograph the plate and save the robot and reader traces.
 
-## 7:00 to 10:00: round 2 and evidence freeze
+## After round 1: round 2 and evidence freeze
 
 1. Review the measured compounds selected for round 2.
 2. Confirm the organizer-approved dose factors and source demand.
@@ -145,12 +183,15 @@ Do not attempt the full plate until those two wells and one real export work.
 7. Save the final receipt, source-file digests, photos, and video.
 8. Start the dashboard in safe receipt-replay mode.
 
-By 10:00 PM, freeze the stage path. Any later change must be reversible and must
-not alter the green simulator.
+Aim to freeze the stage path by 10:00 PM. Any later change must be reversible
+and must not alter the green simulator. If a second hardware block is not
+available, replay the measured round 1 to modeled round 2 boundary honestly.
 
 ## Hard stop rules
 
 - No expression confirmation means no compound screen.
+- No organizer-recorded GFP pass means no screen booking.
+- No second expression batch while the team's first batch is active.
 - No organizer-confirmed protocol means no physical run.
 - No clear deck and E-stop owner means no motion.
 - No plan verification means no backend dispatch.
@@ -162,6 +203,8 @@ not alter the green simulator.
 - No modeled value may be presented as measured.
 - Pause and Stop are software controls, not the physical E-stop.
 - A successful simulation does not prove a physical move is safe.
+- A 60-minute booking is a hard resource boundary. Do not overrun another
+  team's slot.
 
 ## Fallback ladder
 

@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0",
+  "source": "RCSB Protein Data Bank",
+  "downloaded_on": "2026-07-24",
+  "entries": [
+    {
+      "pdb_id": "1XPB",
+      "file": "1XPB.pdb",
+      "sha256": "55a794d8d6c0b15add37117e0e4c95945a4f6a23c0d13aca077e66b36deda207",
+      "role": "wild-type receptor reference",
+      "resolution_angstrom": 1.9,
+      "protein_chains": [
+        "A"
+      ],
+      "protein_residue_count": 263,
+      "active_site_chain": "A",
+      "require_no_seqadv": true,
+      "required_heterogens": [
+        "SO4"
+      ]
+    },
+    {
+      "pdb_id": "1ERO",
+      "file": "1ERO.pdb",
+      "sha256": "3c8c9fa6e5777d1e363263c64ca5b19fc8e6f69d442d4db0400929c1cb477697",
+      "role": "boronic inhibitor pocket reference",
+      "resolution_angstrom": 2.1,
+      "protein_chains": [
+        "A"
+      ],
+      "protein_residue_count": 263,
+      "active_site_chain": "A",
+      "require_no_seqadv": false,
+      "required_heterogens": [
+        "BJP"
+      ]
+    }
+  ]
+}

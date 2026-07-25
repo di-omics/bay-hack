@@ -1,6 +1,6 @@
 # Event brief: confirmed from the host and official guide
 
-Reviewed 2026-07-23 from the organizer email, Track A guide, attached Sepia Bio
+Reviewed 2026-07-24 from the organizer email, updated Track A guide, attached Sepia Bio
 protocol, and Zeon documentation. See
 [OFFICIAL_TRACK_A_MATERIALS.md](OFFICIAL_TRACK_A_MATERIALS.md) for the complete
 source-grounded notes.
@@ -34,9 +34,37 @@ Three robotic workflows are required:
 - **Equipment:** Axygen PlateMax sealer, Benchmark Incu-Mixer MP, and BioTek
   ELx808 reader.
 - **Track B partner: OpenShelf** (automated storage <-> bench execution).
-- **Agent framework partner: Google ADK.** The Track A guide says a framework
-  such as ADK can drive the decision layer. It is optional, not the scientific
-  acceptance gate.
+- **Agent framework partner: Google ADK.** The updated guide asks teams to
+  install ADK, run a basic agent, and expose prioritization and analysis as
+  function tools before the event. ADK coordinates decisions, but deterministic
+  evidence and safety gates remain authoritative.
+
+## Hardware booking rules
+
+- The shared testbed is booked in 60-minute blocks.
+- The plate reader is automatically reserved inside a screen block.
+- Expression plates may remain in the incubator between active hardware slots.
+- Each team may have only one active expression batch.
+- A team cannot reserve a screen block until its GFP expression gate passes.
+
+The scheduling bottleneck is now part of the scientific plan. Find the booking
+sheet at kickoff, reserve the earliest expression block, start CFPS immediately,
+and use the incubation window to finish Zeon and reader integration. Do not
+spend the morning polishing software while the biological clock is idle.
+
+## Pre-event setup status
+
+- ADK 2.5.0 is pinned, installed in an isolated environment, and the root agent
+  plus six function tools load successfully.
+- The offline ADK tool smoke proves reader file in, deterministic decision,
+  measurement-driven round 2 plate map out.
+- A live Gemini turn still requires a local `GOOGLE_API_KEY`.
+- RCSB structures 1XPB and 1ERO are pinned by SHA-256 and pass local checks for
+  identity, chain, resolution, residue count, and catalytic-site residues.
+- The 1XPB file is a wild-type structural reference, not yet a prepared docking
+  receptor.
+- Compound prioritization already supports complete external scores, numeric
+  feature diversity, and deterministic library coverage.
 
 ## Confirmed assay facts
 
@@ -72,6 +100,8 @@ Three robotic workflows are required:
 - compound names, source wells, stocks, and permitted metadata
 - exact Zeon project, skill, workflow, world, object, and anchor names
 - electronic pipette volume units, speeds, and tip policy
+- the hardware booking sheet and first available expression block
+- organizer compound-library file and robotic-skills repository, both still TBA
 
 `TEM1AssaySpec` pre-fills only facts published in the guide: sfGFP, Ex 485,
 Em 528, nitrocefin, A490, and a 30-second cadence. Physical execution remains

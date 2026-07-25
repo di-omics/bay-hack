@@ -8,6 +8,7 @@ venv/
 *.mp4
 .DS_Store
 .pytest_cache/
+.adk/
 .idea/
 .vscode/
 run_artifacts/

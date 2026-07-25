@@ -14,3 +14,6 @@
 # pytest>=8.0         # tests
 # pillow>=12          # camera colorimetry + regenerate docs/demo.gif
 # qrcode>=8           # regenerate docs/qr.svg
+#
+# The event Google ADK agent is pinned separately:
+#   pip install -r requirements-adk.txt

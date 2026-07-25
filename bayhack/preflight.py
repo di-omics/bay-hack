@@ -25,6 +25,7 @@ from .measurements import (
     PlateCalibration,
 )
 from .safety import run_refusal
+from .structure import validate_manifest
 from .tem1 import run_simulated_closed_loop, verify_receipt_integrity
 from .verification import CsvVolumeGate, JsonCvCheckpoint
 
@@ -114,6 +115,7 @@ def run_preflight(
     required_files = (
         "README.md",
         "OFFICIAL_TRACK_A_MATERIALS.md",
+        "ADK_PREP.md",
         "ZEON_NATIVE_INTEGRATION.md",
         "TEM1_TRACK_A.md",
         "ACCEPTANCE.md",
@@ -126,7 +128,14 @@ def run_preflight(
         "bayhack/loop.py",
         "bayhack/safety.py",
         "bayhack/tem1.py",
+        "bayhack/structure.py",
         "bayhack/verification.py",
+        "bayhack_adk/agent.py",
+        "bayhack_adk/tools.py",
+        "requirements-adk.txt",
+        "structures/manifest.json",
+        "structures/1XPB.pdb",
+        "structures/1ERO.pdb",
     )
     missing = [name for name in required_files if not (ROOT / name).exists()]
     checks.append(PreflightCheck(
@@ -230,6 +239,66 @@ def run_preflight(
         ))
     except Exception as exc:
         checks.append(PreflightCheck("tem1-track-a-fallback", "FAIL", str(exc)))
+
+    try:
+        structure = validate_manifest(ROOT / "structures" / "manifest.json")
+        checks.append(PreflightCheck(
+            "tem1-structure-packet",
+            "PASS" if structure["passed"] else "FAIL",
+            (
+                "pinned RCSB references and catalytic residues validated"
+                if structure["passed"]
+                else "structure manifest validation failed"
+            ),
+            {
+                "entries": [
+                    {
+                        "pdb_id": entry["pdb_id"],
+                        "role": entry["role"],
+                        "sha256": entry.get("sha256"),
+                        "passed": entry["passed"],
+                    }
+                    for entry in structure["entries"]
+                ],
+                "claim": structure["claim"],
+            },
+        ))
+    except Exception as exc:
+        checks.append(PreflightCheck("tem1-structure-packet", "FAIL", str(exc)))
+
+    try:
+        from bayhack_adk.smoke import run_smoke
+
+        adk_contract = run_smoke()
+        adk_contract_ok = bool(
+            adk_contract["round1_qc"]
+            and adk_contract["round2_plan"]
+            and adk_contract["round2_uses_measurement"]
+            and not adk_contract["physical_execution_allowed"]
+        )
+        checks.append(PreflightCheck(
+            "adk-tool-contract",
+            "PASS" if adk_contract_ok else "FAIL",
+            "reader evidence produced a gated adaptive round-2 plate map",
+            adk_contract,
+        ))
+    except Exception as exc:
+        checks.append(PreflightCheck("adk-tool-contract", "FAIL", str(exc)))
+
+    try:
+        adk_installed = importlib.util.find_spec("google.adk") is not None
+    except ModuleNotFoundError:
+        adk_installed = False
+    checks.append(PreflightCheck(
+        "google-adk-installation",
+        "PASS" if adk_installed else "WARN",
+        (
+            "Google ADK importable in this Python environment"
+            if adk_installed
+            else "install requirements-adk.txt in .venv for the event agent"
+        ),
+        {"importable": adk_installed},
+    ))
 
     seam_modules = {
         "plr-mcp": "plr_mcp",
@@ -369,6 +438,8 @@ def run_preflight(
         "simulation-fallback",
         "benchmark",
         "tem1-track-a-fallback",
+        "tem1-structure-packet",
+        "adk-tool-contract",
     }
     core_ready = all(
         check.status == "PASS" for check in checks if check.name in core_names

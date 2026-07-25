@@ -263,7 +263,7 @@ footer .wrap{display:flex;justify-content:space-between;align-items:center;gap:2
       <div class="gate"><div class="num">02 · physical</div><b>Verified plate plan</b><p>Wells, controls, source positions, replicates, dose factors, and protocol state are checked before dispatch.</p></div>
       <div class="gate"><div class="num">03 · measurement</div><b>Kinetic evidence</b><p>Every assigned well needs a valid trace. Source files are tied to the result by SHA-256.</p></div>
       <div class="gate"><div class="num">04 · assay</div><b>Z-prime QC</b><p>Weak control separation quarantines the plate and blocks the scientific model update.</p></div>
-      <div class="gate"><div class="num">05 · adaptation</div><b>Observed selection</b><p>Round 2 records exactly which round 1 scores selected its compounds and factors.</p></div>
+      <div class="gate"><div class="num">05 · agent contract</div><b>Files, not persuasion</b><p>Google ADK calls deterministic tools: results file in, verified decision, plate map out.</p></div>
       <div class="gate"><div class="num">06 · presentation</div><b>Safe receipt replay</b><p>A valid sealed receipt recreates the evidence story with zero hardware commands.</p></div>
     </div>
   </div>
@@ -284,7 +284,12 @@ footer .wrap{display:flex;justify-content:space-between;align-items:center;gap:2
 
 <span class="comment"># zero-motion readiness and complete tests</span>
 <span class="prompt">$</span> python -m bayhack.preflight
-<span class="prompt">$</span> pytest -q</pre>
+<span class="prompt">$</span> python scripts/validate_tem1_structures.py
+<span class="prompt">$</span> python -m pytest -q
+
+<span class="comment"># optional Google ADK decision layer</span>
+<span class="prompt">$</span> .venv/bin/python -m bayhack_adk.smoke
+<span class="prompt">$</span> .venv/bin/adk run bayhack_adk</pre>
     <p class="note"><b>Physical execution is intentionally locked by default.</b> The code will not invent the event's reagent settings, volumes, wavelengths, compound map, or Zeon API. Those must come from the organizer protocol.</p>
     <div class="buttons">
       <a class="pill solid" href="https://github.com/di-omics/bay-hack">Open the repository</a>
@@ -302,6 +307,8 @@ footer .wrap{display:flex;justify-content:space-between;align-items:center;gap:2
       <a class="ref" href="https://www.zeonsystems.ai/blog/inside-the-zeon-stack">Inside the Zeon stack</a>
       <a class="ref" href="https://pubmed.ncbi.nlm.nih.gov/10838414/">Original Z-prime assay-quality paper</a>
       <a class="ref" href="https://www.sciencedirect.com/science/article/pii/S0168165622000025">Cell-free TEM-1 synthesis and characterization</a>
+      <a class="ref" href="https://adk.dev/tools-custom/function-tools/">Google ADK function tools</a>
+      <a class="ref" href="https://www.rcsb.org/structure/1XPB">RCSB wild-type TEM-1 structure 1XPB</a>
     </div>
   </div>
 </section>
