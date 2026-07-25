@@ -20,6 +20,7 @@ from .tools import (
     design_round_1,
     design_round_2,
     inspect_track_a_inputs,
+    prove_round_1_changed_round_2,
 )
 
 
@@ -35,6 +36,7 @@ def _write_reader_csv(path: Path, plan: TEM1RoundPlan) -> None:
 
 def run_smoke() -> dict:
     previous_run_dir = os.environ.get("BAYHACK_RUN_DIR")
+    result: dict | None = None
     try:
         with tempfile.TemporaryDirectory(prefix="bayhack-adk-") as temporary:
             os.environ["BAYHACK_RUN_DIR"] = temporary
@@ -65,6 +67,12 @@ def run_smoke() -> dict:
                 "compounds.csv",
                 analysis["output_file"],
             )
+            proof = prove_round_1_changed_round_2(
+                "assay-spec.json",
+                "compounds.csv",
+                analysis["output_file"],
+                round2["output_file"],
+            )
 
             result = {
                 "tool_contract": "evidence file in -> decision -> plate map out",
@@ -75,6 +83,7 @@ def run_smoke() -> dict:
                 "round2_uses_measurement": (
                     round2["selection_rationale"]["measurement_used"]
                 ),
+                "round_transition_proved": proof["loop_closed"],
                 "physical_execution_allowed": round2[
                     "physical_execution_allowed"
                 ],
@@ -84,17 +93,19 @@ def run_smoke() -> dict:
             os.environ.pop("BAYHACK_RUN_DIR", None)
         else:
             os.environ["BAYHACK_RUN_DIR"] = previous_run_dir
-        if result != {
-            "tool_contract": "evidence file in -> decision -> plate map out",
-            "input_validation": True,
-            "round1_plan": True,
-            "round1_qc": True,
-            "round2_plan": True,
-            "round2_uses_measurement": True,
-            "physical_execution_allowed": False,
-        }:
-            raise SystemExit(f"ADK tool smoke failed: {result}")
-        return result
+    expected = {
+        "tool_contract": "evidence file in -> decision -> plate map out",
+        "input_validation": True,
+        "round1_plan": True,
+        "round1_qc": True,
+        "round2_plan": True,
+        "round2_uses_measurement": True,
+        "round_transition_proved": True,
+        "physical_execution_allowed": False,
+    }
+    if result != expected:
+        raise SystemExit(f"ADK tool smoke failed: {result}")
+    return result
 
 
 if __name__ == "__main__":

@@ -227,7 +227,7 @@ footer .wrap{display:flex;justify-content:space-between;align-items:center;gap:2
   <div class="wrap">
     <p class="eyebrow">Round 1 sharpens round 2</p>
     <h2>The evidence changes the next plate</h2>
-    <p class="lede">Candidate selection uses observed inhibition minus one standard error. The top candidates return across organizer-configured dose factors.</p>
+    <p class="lede">Candidate selection uses observed inhibition minus one standard error. The top candidates return across organizer-configured dose factors. A SHA-256 sealed transition proof records every advanced compound, dose, and round 2 well.</p>
     <div class="adaptive-grid">
       <div class="card">
         <span class="tag modeled">modeled demonstration</span>
@@ -264,7 +264,8 @@ footer .wrap{display:flex;justify-content:space-between;align-items:center;gap:2
       <div class="gate"><div class="num">03 · measurement</div><b>Kinetic evidence</b><p>Every assigned well needs a valid trace. Source files are tied to the result by SHA-256.</p></div>
       <div class="gate"><div class="num">04 · assay</div><b>Z-prime QC</b><p>Weak control separation quarantines the plate and blocks the scientific model update.</p></div>
       <div class="gate"><div class="num">05 · agent contract</div><b>Files, not persuasion</b><p>Google ADK calls deterministic tools: results file in, verified decision, plate map out.</p></div>
-      <div class="gate"><div class="num">06 · presentation</div><b>Safe receipt replay</b><p>A valid sealed receipt recreates the evidence story with zero hardware commands.</p></div>
+      <div class="gate"><div class="num">06 · adaptation</div><b>Sealed plate diff</b><p>The accepted ranking must match the compounds, doses, and wells placed on round 2.</p></div>
+      <div class="gate"><div class="num">07 · presentation</div><b>Safe receipt replay</b><p>A valid sealed receipt recreates the evidence story with zero hardware commands.</p></div>
     </div>
   </div>
 </section>
@@ -281,6 +282,8 @@ footer .wrap{display:flex;justify-content:space-between;align-items:center;gap:2
 
 <span class="comment"># create the unconfirmed organizer packet</span>
 <span class="prompt">$</span> python -m bayhack.tem1_cli init --output-dir run_artifacts/tem1
+<span class="prompt">$</span> python -m bayhack.tem1_cli prove-loop --help
+<span class="prompt">$</span> python -m bayhack.tem1_cli finalize --help
 
 <span class="comment"># zero-motion readiness and complete tests</span>
 <span class="prompt">$</span> python -m bayhack.preflight

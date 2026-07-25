@@ -59,7 +59,8 @@ Execution order:
    fluorescence, Ex 485 nm, Em 528 nm, nitrocefin, A490, and a 30-second
    cadence. Fill the remaining volumes, durations, compositions, compound
    source wells, and Zeon parameters only from the official event protocol and
-   track-lead answers.
+   track-lead answers. Record booking, object names, pipette units, reader
+   export shape, and safety owners in hardware-matrix.json.
 4. Start the single allowed expression batch as soon as the slot opens. Leave
    it in the incubator if approved and use the incubation window for Zeon,
    reader, compound-library, and agent integration.
@@ -86,13 +87,19 @@ Execution order:
    fails, quarantine the data and stop. Do not relax thresholds to rescue a
    failed plate.
 11. Generate round 2 only with build_round2_plan from the saved round-1 analysis.
-12. Run and analyze round 2. Show the four-factor curve, uncertainty-aware
+12. Run prove-loop immediately. Refuse the loop claim unless the sealed proof
+    confirms that the accepted ranking matches every round 2 compound, dose,
+    and well.
+13. Run and analyze round 2. Show the four-factor curve, uncertainty-aware
    monotonicity, relative 50 percent inhibition crossing, and final gate.
-13. Save one successful receipt and one expression-refusal proof. Present the
+14. Run tem1_cli finalize against the fixed event directory. It must recompute
+    expression, both analyses, and the plate transition from raw files before
+    sealing the measured receipt.
+15. Save one successful receipt and one expression-refusal proof. Present the
     successful receipt through safe replay with zero hardware commands.
-14. Update only the minimum dashboard text needed to display the measured
+16. Update only the minimum dashboard text needed to display the measured
     provenance, real Z-prime, adaptive selection, and confirmed follow-up.
-15. Record the successful physical run immediately. Do not postpone recording
+17. Record the successful physical run immediately. Do not postpone recording
     for extra features.
 
 Safety invariants:
@@ -107,6 +114,7 @@ Safety invariants:
   approved wash policy.
 - No passing control QC means no scientific-model update.
 - No round 1 QC means no round 2.
+- No valid round transition proof means no closed-loop claim.
 - No round 2 confirmation means no nomination.
 - Venue hardware must never become a dependency of bayhack.tem1_demo.
 - Every Zeon electronic-pipette and operator-message call used in a

@@ -306,8 +306,12 @@ def test_receipt_integrity_detects_tampering():
 def test_init_packet_prefills_only_published_protocol_facts(tmp_path):
     packet = initialize_packet(tmp_path / "packet")
     spec = json.loads((tmp_path / "packet" / "assay-spec.json").read_text())
+    hardware = json.loads(
+        (tmp_path / "packet" / "hardware-matrix.json").read_text()
+    )
     compounds = load_compounds(tmp_path / "packet" / "compounds.csv")
     assert packet["assay_spec"].endswith("assay-spec.json")
+    assert packet["hardware_matrix"].endswith("hardware-matrix.json")
     assert spec["substrate_name"] == "nitrocefin"
     assert spec["expression_confirmation_method"] == "sfGFP fluorescence"
     assert spec["read_wavelength_nm"] == 490.0
@@ -316,6 +320,10 @@ def test_init_packet_prefills_only_published_protocol_facts(tmp_path):
     assert len(compounds) == 95
     assert not spec["protocol_confirmed_by_organizer"]
     assert not spec["physical_ready"]
+    assert hardware["booking"]["slot_duration_min"] == 60
+    assert hardware["booking"]["reader_auto_reserved_inside_screen_block"]
+    assert hardware["zeon"]["project"] is None
+    assert not hardware["liquid_handling"]["simulation_guard_confirmed"]
 
 
 def test_95_compound_library_defaults_to_one_full_replicated_plate():

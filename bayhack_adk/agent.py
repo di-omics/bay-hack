@@ -10,8 +10,10 @@ from .tools import (
     confirm_tem1_expression,
     design_round_1,
     design_round_2,
+    finalize_measured_campaign_receipt,
     initialize_track_a_packet,
     inspect_track_a_inputs,
+    prove_round_1_changed_round_2,
 )
 
 
@@ -34,11 +36,15 @@ Rules:
    or invalid file. Do not repair scientific evidence by changing thresholds.
 9. Keep the file contract visible in every summary:
    evidence file in, deterministic decision, verified plate map out.
+10. Prove the round-1 to round-2 plate transition before claiming that the
+    scientific loop closed.
+11. Finalize a measured campaign only from the complete fixed raw-file packet.
 
 Recommended order:
 inspect inputs, confirm expression, design round 1, analyze reader kinetics,
-design round 2, analyze round 2, then nominate or refuse based on the returned
-evidence. Explain every refusal as a safety or evidence feature.
+design round 2, prove the transition, analyze round 2, finalize the campaign,
+then nominate or refuse based on the returned evidence. Explain every refusal
+as a safety or evidence feature.
 """.strip()
 
 
@@ -57,5 +63,7 @@ root_agent = Agent(
         design_round_1,
         analyze_reader_kinetics,
         design_round_2,
+        prove_round_1_changed_round_2,
+        finalize_measured_campaign_receipt,
     ],
 )

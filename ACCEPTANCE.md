@@ -24,7 +24,7 @@ may promote evidence to hardware-validated.
 | Kinetic evidence | Every assigned well has at least three unique time points and finite values | analysis blocked | CSV adapter implemented and tested |
 | Assay quality | Vehicle-control slope exceeds no-enzyme background and Z-prime clears the declared minimum | data quarantined, no model update | implemented and tested |
 | Candidate quality | Inhibition clears the declared threshold and replicate SD stays below its limit | candidate held | implemented and tested |
-| Adaptive design | Round 1 QC passed and round 2 selection records the round 1 scores used | round 2 blocked | implemented and tested |
+| Adaptive design | Round 1 QC passed, the selected ranking matches every round 2 compound, dose, and well, and the transition proof is sealed | round 2 loop claim blocked | implemented and tested |
 | Dose response | Round 2 QC passed, a condition is a hit, and the curve is monotonic within one-standard-error tolerance | nomination blocked | implemented and tested |
 | Follow-up | A confirmed condition is nominated for downstream characterization | loop remains incomplete | implemented in simulation |
 | Receipt integrity | Canonical payload matches its SHA-256 digest | replay blocked | implemented and tested |
@@ -56,6 +56,9 @@ Round 2 must record:
 
 A hand-edited second plate is not an adaptive loop.
 
+The transition proof also records source-file digests, advanced and held
+compounds, changed well counts, and its own SHA-256 integrity envelope.
+
 ## Dose-response claim boundary
 
 The repository computes an uncertainty-aware monotonicity check and a relative
@@ -73,9 +76,11 @@ do not call that value a definitive IC50.
 - Z-prime gate and failed-data quarantine
 - Uncertainty-aware round 1 ranking
 - Adaptive four-factor round 2 plan
+- Sealed round 1 to round 2 compound, dose, and well diff
 - Dose-response monotonicity and relative 50 percent crossing
 - Final nomination gate
-- Tamper-evident receipt and zero-motion replay
+- Raw-file campaign recomputation, tamper-evident receipt, and zero-motion
+  replay
 - Generic liquid-handling fallback and its physical verification adapters
 - Lazy seams to the di-omics robotics stack
 

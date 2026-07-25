@@ -55,9 +55,9 @@ spend the morning polishing software while the biological clock is idle.
 ## Pre-event setup status
 
 - ADK 2.5.0 is pinned, installed in an isolated environment, and the root agent
-  plus six function tools load successfully.
+  plus eight function tools load successfully.
 - The offline ADK tool smoke proves reader file in, deterministic decision,
-  measurement-driven round 2 plate map out.
+  measurement-driven round 2 plate map out, and a sealed transition proof.
 - A live Gemini turn still requires a local `GOOGLE_API_KEY`.
 - RCSB structures 1XPB and 1ERO are pinned by SHA-256 and pass local checks for
   identity, chain, resolution, residue count, and catalytic-site residues.

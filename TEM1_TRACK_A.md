@@ -67,14 +67,18 @@ return across organizer-configured dose factors.
 - Replicate SD, standard error, conservative score, and hit gate
 - Failed-control quarantine with no scientific-model update
 - Adaptive round 2 planning from round 1 evidence
+- A sealed round 1 to round 2 diff with compounds, doses, wells, and source
+  digests
 - Four-factor dose-response confirmation
 - Uncertainty-aware monotonicity checking
 - Relative factor estimate for the 50 percent inhibition crossing
 - Final nomination only after round 2 QC and confirmation pass
+- A measured-campaign finalizer that recomputes every saved decision from raw
+  files before sealing the receipt
 - Tamper-evident closed-loop receipts
 - A deliberate failed-expression path with zero compound wells, model updates,
   round 2 plans, or robot commands after the failure
-- A Google ADK root agent with six deterministic function tools
+- A Google ADK root agent with eight deterministic function tools
 - A fixed results-file to decision to plate-map contract
 - Pinned, validated wild-type and inhibitor-bound TEM-1 structural references
 
@@ -130,6 +134,7 @@ This creates:
 
 - `assay-spec.json`: unconfirmed fields remain null
 - `compounds.csv`: placeholder identifiers that must be replaced
+- `hardware-matrix.json`: booking, Zeon, pipette, reader, and safety facts
 - `README.txt`: the on-site sequence
 
 The optional ADK agent wraps the same operations:
@@ -216,13 +221,26 @@ python -m bayhack.tem1_cli round2-plan \
   --analysis run_artifacts/tem1/round1-analysis.json \
   --output run_artifacts/tem1/round2-plan.json
 
-# 6. Execute, export, and analyze round 2.
+# 6. Seal the visible proof that round 1 changed the next plate.
+python -m bayhack.tem1_cli prove-loop \
+  --config run_artifacts/tem1/assay-spec.json \
+  --compounds run_artifacts/tem1/compounds.csv \
+  --analysis run_artifacts/tem1/round1-analysis.json \
+  --round2-plan run_artifacts/tem1/round2-plan.json \
+  --output run_artifacts/tem1/round1-to-round2-proof.json
+
+# 7. Execute, export, and analyze round 2.
 python -m bayhack.tem1_cli analyze \
   --config run_artifacts/tem1/assay-spec.json \
   --compounds run_artifacts/tem1/compounds.csv \
   --plan run_artifacts/tem1/round2-plan.json \
   --reader run_artifacts/tem1/round2-reader.csv \
   --output run_artifacts/tem1/round2-analysis.json
+
+# 8. Recompute every decision from raw files and seal the measured receipt.
+python -m bayhack.tem1_cli finalize \
+  --run-dir run_artifacts/tem1 \
+  --output run_artifacts/tem1/campaign-receipt.json
 ```
 
 ## Hard stops
@@ -232,6 +250,7 @@ python -m bayhack.tem1_cli analyze \
 - A plan with missing source wells means no physical execution.
 - Missing kinetic wells mean no analysis.
 - Z-prime below the declared threshold means no model update and no round 2.
+- A round 2 plate that does not match the accepted ranking means no loop claim.
 - Failed round 2 QC means no dose-response claim.
 - A nonmonotonic or non-hit confirmation means no final nomination.
 - Modeled values must never be described as measured.

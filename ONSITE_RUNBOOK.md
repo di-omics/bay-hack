@@ -170,7 +170,9 @@ Do not attempt the full plate until those two wells and one real export work.
 9. If Z-prime fails, stop and troubleshoot controls. Do not tune the code to
    bless a failed plate.
 10. If QC passes, generate `round2-plan.json` from the saved analysis.
-11. Photograph the plate and save the robot and reader traces.
+11. Generate `round1-to-round2-proof.json` with `tem1_cli prove-loop`.
+12. Show the two plate maps side by side and confirm the proof digest.
+13. Photograph the plate and save the robot and reader traces.
 
 ## After round 1: round 2 and evidence freeze
 
@@ -180,8 +182,11 @@ Do not attempt the full plate until those two wells and one real export work.
 4. Execute and export the kinetic reader data.
 5. Analyze the curves and inspect monotonicity.
 6. Nominate only after QC and confirmation pass.
-7. Save the final receipt, source-file digests, photos, and video.
-8. Start the dashboard in safe receipt-replay mode.
+7. Run `tem1_cli finalize --run-dir run_artifacts/tem1`. It must recompute
+   every saved decision from the raw fixed files.
+8. Save the sealed receipt, source-file digests, photos, and video.
+9. Start the dashboard in safe receipt-replay mode with
+   `run_artifacts/tem1/campaign-receipt.json`.
 
 Aim to freeze the stage path by 10:00 PM. Any later change must be reversible
 and must not alter the green simulator. If a second hardware block is not

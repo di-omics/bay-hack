@@ -9,12 +9,16 @@ gates never depend on an LLM.
 
 - Google ADK is pinned in `requirements-adk.txt`.
 - `bayhack_adk/agent.py` exposes the loadable `root_agent`.
-- Six plain-Python function tools wrap the fixed Track A file contract.
+- Eight plain-Python function tools wrap the fixed Track A file contract.
 - Every tool path is restricted to `BAYHACK_RUN_DIR`.
 - No ADK tool can command hardware.
 - A failed expression or assay-quality gate remains authoritative.
 - The offline tool smoke proves that round 1 reader evidence creates a
   measurement-driven round 2 plate map.
+- A transition tool seals the exact compounds, doses, and wells changed by
+  round 1 evidence.
+- A finalizer recomputes the measured campaign from raw fixed files before
+  sealing its replay receipt.
 
 ## Install and validate
 
@@ -30,6 +34,7 @@ The smoke requires no API key and must end with:
 
 ```text
 "round2_uses_measurement": true
+"round_transition_proved": true
 "physical_execution_allowed": false
 ```
 
@@ -69,6 +74,8 @@ For the browser interface:
 | `design_round_1` | emits a balanced, verified round 1 plate map |
 | `analyze_reader_kinetics` | computes slopes, controls, Z-prime, ranking, and the round 2 gate |
 | `design_round_2` | emits confirmation doses only from passing saved round 1 evidence |
+| `prove_round_1_changed_round_2` | seals the measured plate transition and its source digests |
+| `finalize_measured_campaign_receipt` | recomputes raw evidence and seals the measured campaign |
 
 The boundary is intentionally simple:
 
@@ -104,8 +111,14 @@ guess missing fields.
 
 ```text
 Analyze tem1/round1-reader.csv against tem1/round1-plan.json. If QC passes,
-write tem1/round1-analysis.json and design tem1/round2-plan.json. If QC fails,
-stop and explain the control failure.
+write tem1/round1-analysis.json, design tem1/round2-plan.json, and prove the
+plate transition. If QC fails, stop and explain the control failure.
+```
+
+```text
+After tem1/round2-reader.csv has been analyzed, finalize the campaign from the
+tem1 directory. Refuse if any saved plan or analysis differs from the raw
+files. Report the receipt digest and measured nomination.
 ```
 
 Every stage claim must cite the returned file, provenance label, and gate.

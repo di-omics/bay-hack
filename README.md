@@ -69,8 +69,9 @@ The dashboard presents two stage-safe paths:
 The deterministic fallback currently reports a modeled expression gate,
 modeled Z-prime above the configured 0.50 threshold in both rounds, replicated
 uncertainty, a monotonic confirmation curve, a relative 50 percent inhibition
-crossing, and a SHA-256 sealed receipt. These are simulation results, not wet-lab
-claims.
+crossing, a sealed round 1 to round 2 plate diff, and a SHA-256 sealed receipt.
+The dashboard shows the two plate maps side by side. These are simulation
+results, not wet-lab claims.
 
 ## Build the real event packet
 
@@ -81,7 +82,9 @@ python -m bayhack.tem1_cli init --output-dir run_artifacts/tem1
 The generated assay configuration pre-fills the published sfGFP, nitrocefin,
 A490, and 30-second-cadence facts. Physical execution remains locked until the
 track lead supplies the scaled reaction volumes, total kinetic window,
-compound source wells, and organizer confirmation.
+compound source wells, and organizer confirmation. The packet also creates
+`hardware-matrix.json` for booking, Zeon object names, pipette units, tip
+policy, reader export shape, and safety ownership.
 
 Then use the file workflow:
 
@@ -90,6 +93,8 @@ python -m bayhack.tem1_cli confirm-expression --help
 python -m bayhack.tem1_cli round1-plan --help
 python -m bayhack.tem1_cli analyze --help
 python -m bayhack.tem1_cli round2-plan --help
+python -m bayhack.tem1_cli prove-loop --help
+python -m bayhack.tem1_cli finalize --help
 ```
 
 See [TEM1_TRACK_A.md](TEM1_TRACK_A.md) for exact schemas and commands.
@@ -110,10 +115,10 @@ cp .env.example .env
 .venv/bin/adk run bayhack_adk
 ```
 
-The six function tools initialize and inspect an event packet, gate expression,
-design round 1, analyze reader kinetics, and design round 2. Tool paths are
-restricted to `BAYHACK_RUN_DIR`. No ADK tool commands hardware or overrides a
-failed gate.
+The eight function tools initialize and inspect an event packet, gate
+expression, design and analyze both rounds, seal the plate transition proof,
+and finalize a measured campaign receipt. Tool paths are restricted to
+`BAYHACK_RUN_DIR`. No ADK tool commands hardware or overrides a failed gate.
 
 The contract is:
 
@@ -155,6 +160,8 @@ See [structures/README.md](structures/README.md).
 - Candidate ranking uses mean inhibition minus one standard error.
 - The top observed candidates return across four organizer-configured dose
   factors.
+- A sealed transition artifact proves that the selected compounds, doses, and
+  round 2 wells match the accepted round 1 ranking.
 - Final nomination requires round 2 QC, a passing condition, and an
   uncertainty-tolerant monotonic curve.
 
@@ -176,6 +183,7 @@ choosing labels in a dashboard.
 | Reader export incomplete | analysis blocked |
 | Control quality or Z-prime fails | data quarantined, no model update |
 | Round 1 QC fails | round 2 planning blocked |
+| Round 2 plate does not match round 1 ranking | loop proof blocked |
 | Round 2 QC fails | dose-response claim blocked |
 | Confirmation fails | final nomination blocked |
 | Receipt digest fails | stage replay blocked |
@@ -188,8 +196,10 @@ choosing labels in a dashboard.
 - **hardware-validated:** measured evidence that also clears the physical gates
 
 No modeled value may be described as measured. Source CSV files are tied to
-analysis records by SHA-256 digest. The complete Track A receipt is sealed too,
-and safe replay issues zero hardware commands.
+analysis records by SHA-256 digest. `tem1_cli finalize` recomputes expression,
+both analyses, and the adaptive plate transition from the raw fixed files
+before sealing the complete Track A receipt. Safe replay issues zero hardware
+commands.
 
 ## Zero-motion readiness audit
 

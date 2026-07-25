@@ -274,12 +274,13 @@ def run_preflight(
             adk_contract["round1_qc"]
             and adk_contract["round2_plan"]
             and adk_contract["round2_uses_measurement"]
+            and adk_contract["round_transition_proved"]
             and not adk_contract["physical_execution_allowed"]
         )
         checks.append(PreflightCheck(
             "adk-tool-contract",
             "PASS" if adk_contract_ok else "FAIL",
-            "reader evidence produced a gated adaptive round-2 plate map",
+            "reader evidence produced and sealed an adaptive round-2 plate map",
             adk_contract,
         ))
     except Exception as exc:

@@ -13,11 +13,15 @@ from bayhack.tem1 import (
     TEM1Error,
     TEM1RoundPlan,
     analyze_round,
+    build_round_transition,
     build_round1_plan,
     build_round2_plan,
     confirm_expression,
+    file_sha256,
+    finalize_measured_campaign,
     load_compounds,
     save_analysis,
+    save_closed_loop,
 )
 from bayhack.tem1_cli import initialize_packet
 
@@ -312,3 +316,92 @@ def design_round_2(
         }
 
     return _run_tool("design_round_2", action)
+
+
+def prove_round_1_changed_round_2(
+    config_file: str,
+    compounds_file: str,
+    round1_analysis_file: str,
+    round2_plan_file: str,
+    output_file: str = "tem1/round1-to-round2-proof.json",
+) -> dict[str, Any]:
+    """Seal proof that accepted round-1 evidence changed the round-2 plate.
+
+    Args:
+        config_file: Assay JSON path relative to BAYHACK_RUN_DIR.
+        compounds_file: Compound CSV path relative to BAYHACK_RUN_DIR.
+        round1_analysis_file: Saved round-1 analysis JSON.
+        round2_plan_file: Saved round-2 plate-plan JSON.
+        output_file: Transition-proof JSON path relative to BAYHACK_RUN_DIR.
+
+    Returns:
+        A sealed plate diff with advanced compounds, doses, wells, and gates.
+    """
+
+    def action() -> dict[str, Any]:
+        spec = TEM1AssaySpec.load(_artifact_path(config_file, must_exist=True))
+        compounds = load_compounds(
+            _artifact_path(compounds_file, must_exist=True)
+        )
+        analysis_path = _artifact_path(
+            round1_analysis_file, must_exist=True
+        )
+        plan_path = _artifact_path(round2_plan_file, must_exist=True)
+        analysis = json.loads(analysis_path.read_text())
+        plan = TEM1RoundPlan.load(plan_path)
+        proof = build_round_transition(
+            analysis,
+            plan,
+            compounds,
+            spec,
+            source_artifacts={
+                "round1_analysis": {
+                    "path": _relative(analysis_path),
+                    "sha256": file_sha256(analysis_path),
+                },
+                "round2_plan": {
+                    "path": _relative(plan_path),
+                    "sha256": file_sha256(plan_path),
+                },
+            },
+        )
+        destination = save_analysis(proof, _artifact_path(output_file))
+        return {
+            "output_file": _relative(destination),
+            "loop_closed": proof["loop_closed"],
+            "plate_change": proof["plate_change"],
+            "verification": proof["verification"],
+            "integrity": proof["integrity"],
+            "physical_execution_allowed": False,
+        }
+
+    return _run_tool("prove_round_1_changed_round_2", action)
+
+
+def finalize_measured_campaign_receipt(
+    run_directory: str = "tem1",
+    output_file: str = "tem1/campaign-receipt.json",
+) -> dict[str, Any]:
+    """Recompute and seal a measured campaign from the fixed raw-file packet.
+
+    Args:
+        run_directory: Campaign directory relative to BAYHACK_RUN_DIR.
+        output_file: Sealed receipt path relative to BAYHACK_RUN_DIR.
+
+    Returns:
+        The measured nomination and tamper-evident receipt metadata.
+    """
+
+    def action() -> dict[str, Any]:
+        receipt = finalize_measured_campaign(_artifact_path(run_directory))
+        destination = save_closed_loop(receipt, _artifact_path(output_file))
+        return {
+            "output_file": _relative(destination),
+            "mode": receipt["mode"],
+            "loop_closed": receipt["round_transition"]["loop_closed"],
+            "nomination": receipt["follow_up"],
+            "integrity": receipt["integrity"],
+            "physical_execution_allowed": False,
+        }
+
+    return _run_tool("finalize_measured_campaign_receipt", action)

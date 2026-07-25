@@ -20,4 +20,6 @@ def test_adk_root_agent_has_only_file_contract_tools():
         "design_round_1",
         "analyze_reader_kinetics",
         "design_round_2",
+        "prove_round_1_changed_round_2",
+        "finalize_measured_campaign_receipt",
     }

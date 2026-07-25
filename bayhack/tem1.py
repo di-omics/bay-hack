@@ -1235,6 +1235,327 @@ def save_analysis(analysis: dict[str, Any], path: str | Path) -> Path:
     return destination
 
 
+def build_round_transition(
+    round1_analysis: dict[str, Any],
+    round2_plan: TEM1RoundPlan,
+    compounds: Iterable[Compound],
+    spec: TEM1AssaySpec,
+    *,
+    source_artifacts: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Prove that accepted round-1 evidence changed the round-2 plate."""
+    if round1_analysis.get("round_id") != 1:
+        raise TEM1Error("round transition requires a round-1 analysis")
+    if not round1_analysis.get("assay_qc", {}).get("passed"):
+        raise AssayQCError("round 1 failed assay QC; no transition can be proved")
+    if not round1_analysis.get("world_model", {}).get("updated"):
+        raise TEM1Error("round-1 evidence did not update the scientific model")
+    if round2_plan.round_id != 2:
+        raise TEM1Error("round transition requires a round-2 plan")
+
+    compounds = list(compounds)
+    plan_verification = round2_plan.verify(compounds, spec)
+    if not plan_verification["passed"]:
+        raise TEM1Error(
+            "round-2 plan is invalid: "
+            + "; ".join(plan_verification["reasons"])
+        )
+    rationale = round2_plan.selection_rationale
+    if rationale.get("measurement_used") is not True:
+        raise TEM1Error("round-2 plan does not declare measurement use")
+
+    selected_rows = rationale.get("selected")
+    if not isinstance(selected_rows, list) or not selected_rows:
+        raise TEM1Error("round-2 plan has no evidence-backed selections")
+    try:
+        selected_ids = [str(row["compound_id"]) for row in selected_rows]
+    except (KeyError, TypeError) as exc:
+        raise TEM1Error("round-2 selection rows need compound_id") from exc
+    if len(selected_ids) != len(set(selected_ids)):
+        raise TEM1Error("round-2 selection contains duplicate compounds")
+
+    round1_rows = list(round1_analysis.get("candidates", []))
+    if not round1_rows:
+        raise TEM1Error("round-1 analysis contains no candidate results")
+    ranked_ids = [str(row.get("compound_id", "")) for row in round1_rows]
+    if selected_ids != ranked_ids[:len(selected_ids)]:
+        raise TEM1Error(
+            "round-2 selections do not match the accepted round-1 ranking"
+        )
+
+    plan_candidate_ids: list[str] = []
+    for assignment in round2_plan.assignments:
+        if (
+            assignment.role == "candidate"
+            and assignment.compound_id not in plan_candidate_ids
+        ):
+            plan_candidate_ids.append(str(assignment.compound_id))
+    if set(plan_candidate_ids) != set(selected_ids):
+        raise TEM1Error(
+            "round-2 plate compounds do not match the selection rationale"
+        )
+
+    round1_by_id = {
+        str(row["compound_id"]): row
+        for row in round1_rows
+    }
+    advanced: list[dict[str, Any]] = []
+    for compound_id in selected_ids:
+        assignments = [
+            assignment
+            for assignment in round2_plan.assignments
+            if (
+                assignment.role == "candidate"
+                and assignment.compound_id == compound_id
+            )
+        ]
+        row = round1_by_id[compound_id]
+        advanced.append({
+            "compound_id": compound_id,
+            "round1_mean_inhibition_pct": row["mean_inhibition_pct"],
+            "round1_standard_error_pct": row["standard_error_pct"],
+            "round1_selection_score": row["lower_confidence_score"],
+            "round2_dose_factors": sorted({
+                float(assignment.concentration_factor)
+                for assignment in assignments
+                if assignment.concentration_factor is not None
+            }),
+            "round2_wells": [assignment.well for assignment in assignments],
+            "disposition": "advance to dose response",
+        })
+    held = [
+        {
+            "compound_id": str(row["compound_id"]),
+            "round1_mean_inhibition_pct": row["mean_inhibition_pct"],
+            "round1_standard_error_pct": row["standard_error_pct"],
+            "round1_selection_score": row["lower_confidence_score"],
+            "disposition": "hold after round 1",
+        }
+        for row in round1_rows
+        if str(row["compound_id"]) not in set(selected_ids)
+    ]
+    round1_candidate_wells = sum(
+        assignment.get("role") == "candidate"
+        for assignment in round1_analysis.get("plan", {}).get("assignments", [])
+    )
+    round2_candidate_wells = sum(
+        assignment.role == "candidate"
+        for assignment in round2_plan.assignments
+    )
+    transition = {
+        "schema_version": "1.0",
+        "track": TRACK_NAME,
+        "target": spec.target,
+        "transition": "round1-measurement-to-round2-plan",
+        "loop_closed": True,
+        "measurement": round1_analysis["measurement"],
+        "round1_qc": round1_analysis["assay_qc"],
+        "decisions": {
+            "advanced": advanced,
+            "held": held,
+        },
+        "plate_change": {
+            "round1_compounds_tested": len(round1_rows),
+            "round1_candidate_wells": round1_candidate_wells,
+            "round2_compounds_advanced": len(advanced),
+            "round2_candidate_wells": round2_candidate_wells,
+            "round2_concentration_conditions": sum(
+                len(row["round2_dose_factors"])
+                for row in advanced
+            ),
+        },
+        "verification": {
+            "round1_qc_passed": True,
+            "world_model_updated": True,
+            "measurement_used": True,
+            "selection_matches_ranked_evidence": True,
+            "round2_plan_valid": True,
+            "round2_physical_ready": plan_verification["physical_ready"],
+        },
+        "statement": (
+            "Accepted round-1 kinetic evidence selected the compounds and "
+            "dose conditions placed on the round-2 plate."
+        ),
+    }
+    if source_artifacts:
+        transition["source_artifacts"] = source_artifacts
+    return seal_receipt(transition)
+
+
+def _load_json_object(path: Path, label: str) -> dict[str, Any]:
+    try:
+        payload = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        raise TEM1Error(f"cannot load {label}: {path}") from exc
+    if not isinstance(payload, dict):
+        raise TEM1Error(f"{label} must contain a JSON object")
+    return payload
+
+
+def _require_exact_artifact(
+    label: str,
+    saved: dict[str, Any],
+    recalculated: dict[str, Any],
+) -> None:
+    if saved != recalculated:
+        raise TEM1Error(
+            f"{label} does not match the saved plan and raw evidence"
+        )
+
+
+def finalize_measured_campaign(run_directory: str | Path) -> dict[str, Any]:
+    """Recompute and seal a complete measured campaign from fixed raw files."""
+    run_dir = Path(run_directory)
+    required = {
+        "assay_spec": run_dir / "assay-spec.json",
+        "compounds": run_dir / "compounds.csv",
+        "hardware_matrix": run_dir / "hardware-matrix.json",
+        "expression_evidence": run_dir / "expression.csv",
+        "expression_confirmation": run_dir / "expression-confirmation.json",
+        "round1_plan": run_dir / "round1-plan.json",
+        "round1_reader": run_dir / "round1-reader.csv",
+        "round1_analysis": run_dir / "round1-analysis.json",
+        "round2_plan": run_dir / "round2-plan.json",
+        "round2_reader": run_dir / "round2-reader.csv",
+        "round2_analysis": run_dir / "round2-analysis.json",
+    }
+    missing = [
+        name for name, path in required.items()
+        if not path.is_file()
+    ]
+    if missing:
+        raise TEM1Error(
+            "campaign finalization is missing: " + ", ".join(missing)
+        )
+
+    spec = TEM1AssaySpec.load(required["assay_spec"])
+    if not spec.physical_ready:
+        raise TEM1Error(
+            "campaign assay spec is not organizer-confirmed and physically ready"
+        )
+    compounds = load_compounds(required["compounds"])
+    hardware_matrix = _load_json_object(
+        required["hardware_matrix"], "hardware matrix"
+    )
+
+    expression_evidence = ExpressionEvidence.from_csv(
+        required["expression_evidence"]
+    )
+    if not expression_evidence.provenance.startswith("measured:"):
+        raise TEM1Error("campaign expression evidence is not measured")
+    expression = confirm_expression(expression_evidence, spec)
+    saved_expression = _load_json_object(
+        required["expression_confirmation"],
+        "expression confirmation",
+    )
+    _require_exact_artifact(
+        "expression confirmation", saved_expression, expression
+    )
+    if not expression["passed"]:
+        raise TEM1Error("TEM-1 expression gate failed; campaign cannot finalize")
+
+    round1_plan = TEM1RoundPlan.load(required["round1_plan"])
+    round1_verification = round1_plan.verify(compounds, spec)
+    if not round1_verification["execution_allowed"]:
+        raise TEM1Error("round-1 plan was not physically executable")
+    round1_plate = KineticPlate.from_csv(required["round1_reader"])
+    round1 = analyze_round(round1_plan, compounds, spec, round1_plate)
+    saved_round1 = _load_json_object(
+        required["round1_analysis"], "round-1 analysis"
+    )
+    _require_exact_artifact("round-1 analysis", saved_round1, round1)
+    if not round1["assay_qc"]["passed"]:
+        raise TEM1Error("round-1 assay QC failed; campaign cannot finalize")
+
+    round2_plan = TEM1RoundPlan.load(required["round2_plan"])
+    selected = round2_plan.selection_rationale.get("selected", [])
+    expected_round2_plan = build_round2_plan(
+        round1,
+        compounds,
+        spec,
+        top_k=len(selected),
+    )
+    if round2_plan.to_dict() != expected_round2_plan.to_dict():
+        raise TEM1Error(
+            "round-2 plan does not match the saved round-1 evidence"
+        )
+    round2_verification = round2_plan.verify(compounds, spec)
+    if not round2_verification["execution_allowed"]:
+        raise TEM1Error("round-2 plan was not physically executable")
+    transition = build_round_transition(
+        round1,
+        round2_plan,
+        compounds,
+        spec,
+    )
+
+    round2_plate = KineticPlate.from_csv(required["round2_reader"])
+    round2 = analyze_round(round2_plan, compounds, spec, round2_plate)
+    saved_round2 = _load_json_object(
+        required["round2_analysis"], "round-2 analysis"
+    )
+    _require_exact_artifact("round-2 analysis", saved_round2, round2)
+    if not round2["assay_qc"]["passed"]:
+        raise TEM1Error("round-2 assay QC failed; campaign cannot finalize")
+
+    eligible = [
+        row for row in round2.get("dose_response", [])
+        if row.get("confirmation_passed")
+    ]
+    if not eligible:
+        raise TEM1Error("no round-2 condition passed confirmation")
+    best_curve = eligible[0]
+    best = next(
+        row for row in round2["candidates"]
+        if (
+            row["compound_id"] == best_curve["compound_id"]
+            and row["concentration_factor"] == best_curve["best_factor"]
+        )
+    )
+    source_artifacts = {
+        name: {
+            "path": str(path.relative_to(run_dir)),
+            "sha256": file_sha256(path),
+        }
+        for name, path in required.items()
+    }
+    receipt = {
+        "schema_version": "2.0",
+        "track": TRACK_NAME,
+        "target": spec.target,
+        "mode": "measured-evidence",
+        "assay_spec": spec.to_dict(),
+        "hardware_matrix": hardware_matrix,
+        "source_artifacts": source_artifacts,
+        "protein_synthesis": {
+            "stage": "cell-free TEM-1 production",
+            "confirmation": expression,
+            "screening_allowed": True,
+        },
+        "rounds": [round1, round2],
+        "round_transition": transition,
+        "follow_up": {
+            "action": (
+                "nominate confirmed inhibitor condition for downstream "
+                "characterization"
+            ),
+            "compound_id": best["compound_id"],
+            "concentration_factor": best["concentration_factor"],
+            "mean_inhibition_pct": best["mean_inhibition_pct"],
+            "inhibition_50_factor_estimate": (
+                best_curve["inhibition_50_factor_estimate"]
+            ),
+            "inhibition_50_status": best_curve["inhibition_50_status"],
+            "dose_response_monotonic": (
+                best_curve["monotonic_with_uncertainty"]
+            ),
+            "executed": True,
+            "provenance": "measured",
+        },
+    }
+    return seal_receipt(receipt)
+
+
 def simulation_compounds() -> list[Compound]:
     """Generic identifiers only. These are not claims about event compounds."""
     return [
@@ -1329,6 +1650,12 @@ def run_simulated_closed_loop(seed: int = 17) -> dict[str, Any]:
     round1_plate = simulate_kinetic_plate(round1_plan, seed=seed)
     round1 = analyze_round(round1_plan, compounds, spec, round1_plate)
     round2_plan = build_round2_plan(round1, compounds, spec, top_k=3)
+    transition = build_round_transition(
+        round1,
+        round2_plan,
+        compounds,
+        spec,
+    )
     round2_plate = simulate_kinetic_plate(round2_plan, seed=seed + 1)
     round2 = analyze_round(round2_plan, compounds, spec, round2_plate)
     if not round2["assay_qc"]["passed"]:
@@ -1357,6 +1684,7 @@ def run_simulated_closed_loop(seed: int = 17) -> dict[str, Any]:
             "screening_allowed": expression["passed"],
         },
         "rounds": [round1, round2],
+        "round_transition": transition,
         "follow_up": {
             "action": "nominate confirmed inhibitor condition for downstream characterization",
             "compound_id": best["compound_id"],

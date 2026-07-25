@@ -179,10 +179,11 @@ visible, and the operator gets a specific recovery target.
 
 **Why Google ADK?**
 
-ADK is the decision interface around six deterministic file tools. It can
-inspect inputs, gate expression, design plates, and analyze kinetics, but it
-cannot command hardware or override a failed result. This preserves a crisp
-agent story without placing an LLM inside the scientific or safety boundary.
+ADK is the decision interface around eight deterministic file tools. It can
+inspect inputs, gate expression, design plates, analyze kinetics, prove the
+adaptive plate transition, and finalize a measured receipt. It cannot command
+hardware or override a failed result. This preserves a crisp agent story
+without placing an LLM inside the scientific or safety boundary.
 
 **Why not autonomously loop the agent while the plate incubates?**
 

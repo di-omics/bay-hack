@@ -37,6 +37,18 @@ def main() -> None:
             f"uncertainty={selected['standard_error_pct']:5.2f}%  "
             f"score={selected['selection_score']:6.2f}"
         )
+    transition = receipt["round_transition"]
+    change = transition["plate_change"]
+    print(
+        "adaptive plate proof  : "
+        f"{change['round1_compounds_tested']} tested -> "
+        f"{change['round2_compounds_advanced']} advanced -> "
+        f"{change['round2_concentration_conditions']} dose conditions  PASS"
+    )
+    print(
+        "transition integrity  : "
+        f"sha256:{transition['integrity']['digest'][:16]}..."
+    )
     print(f"round 2 plate wells   : {len(round2['plan']['assignments'])}")
     print(f"round 2 Z-prime       : {round2['assay_qc']['z_prime']:.3f}  PASS")
     follow_up = receipt["follow_up"]

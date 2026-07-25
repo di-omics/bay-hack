@@ -3,7 +3,11 @@ import json
 
 import pytest
 
-from bayhack.tem1 import run_simulated_closed_loop, save_closed_loop
+from bayhack.tem1 import (
+    run_simulated_closed_loop,
+    save_closed_loop,
+    seal_receipt,
+)
 from bayhack.tem1_dashboard import (
     PAGE,
     TEM1ReceiptError,
@@ -17,7 +21,10 @@ def test_page_tells_the_announced_track_a_story():
         "TEM-1 closed loop",
         "Produce the antibiotic-resistance enzyme",
         "confirm expression",
-        "Round 1 plate",
+        "Round 1 screen plate",
+        "Round 2 evidence-driven plate",
+        "Round 1 data changed the Round 2 plate",
+        "sealed transition proof",
         "Z-prime",
         "Round 2 confirmation",
         "Prove expression refusal",
@@ -43,6 +50,7 @@ def test_tem1_receipt_replay_is_zero_motion(tmp_path):
     path = save_closed_loop(receipt, tmp_path / "tem1-trust.json")
     replay = replay_tem1_receipt(path)
     assert replay["mode"] == "receipt-replay"
+    assert replay["source_mode"] == "simulation"
     assert replay["hardware_commands_issued_by_replay"] == 0
     assert replay["protein_synthesis"]["confirmation"]["passed"]
     assert len(replay["rounds"]) == 2
@@ -62,4 +70,16 @@ def test_tampered_tem1_receipt_is_refused(tmp_path):
     path = tmp_path / "tampered.json"
     path.write_text(json.dumps(receipt))
     with pytest.raises(TEM1ReceiptError, match="integrity"):
+        replay_tem1_receipt(path)
+
+
+def test_outer_reseal_cannot_hide_tampered_transition_proof(tmp_path):
+    receipt = run_simulated_closed_loop(seed=17)
+    receipt["round_transition"]["decisions"]["advanced"][0][
+        "compound_id"
+    ] = "TAMPERED"
+    receipt = seal_receipt(receipt)
+    path = tmp_path / "tampered-transition.json"
+    path.write_text(json.dumps(receipt))
+    with pytest.raises(TEM1ReceiptError, match="transition"):
         replay_tem1_receipt(path)

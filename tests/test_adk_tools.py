@@ -13,6 +13,7 @@ from bayhack_adk.tools import (
     design_round_1,
     design_round_2,
     inspect_track_a_inputs,
+    prove_round_1_changed_round_2,
 )
 
 
@@ -56,12 +57,21 @@ def test_adk_tools_turn_reader_file_into_adaptive_plate_map(
         "compounds.csv",
         analysis["output_file"],
     )
+    proof = prove_round_1_changed_round_2(
+        "assay-spec.json",
+        "compounds.csv",
+        analysis["output_file"],
+        round2["output_file"],
+    )
 
     assert inspection["ok"]
     assert round1["ok"]
     assert analysis["round2_allowed"]
     assert round2["ok"]
     assert round2["selection_rationale"]["measurement_used"]
+    assert proof["ok"]
+    assert proof["loop_closed"]
+    assert proof["plate_change"]["round2_compounds_advanced"] == 3
     assert not round2["physical_execution_allowed"]
 
 
