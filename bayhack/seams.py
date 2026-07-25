@@ -327,6 +327,83 @@ def dexterity_checkpoint() -> dict:
     return _run(_go())
 
 
+def tube_access_checkpoint() -> dict:
+    """Run the real plr-lab-robot decap and recap skills in simulation.
+
+    The manipulation repository owns the wrist motion and world-state skill
+    checks. bay-hack adds an independent camera gate around this choreography in
+    ``track_c.py``. At the venue, only the arm backend and camera observer swap.
+    """
+    try:
+        from plr_lr import Labware, Workcell
+        from plr_lr.manipulation import DecapSkill, RecapSkill
+    except ImportError as e:
+        raise SeamUnavailable(
+            "plr-lab-robot not installed: pip install -e ../plr-lab-robot"
+        ) from e
+
+    async def _go():
+        wc = Workcell.sim()
+        await wc.setup()
+        tube = Labware(
+            name="sample_tube",
+            kind="microtube",
+            capped=True,
+            cap_diameter=9.0,
+            thread_pitch_mm=1.5,
+            cap_turns=2.5,
+            grip_z=6.0,
+        )
+        wc.add_site("tube_nest", x=120, y=0, z=8, occupant=tube)
+        wc.add_site("cap_park", x=120, y=60, z=8)
+
+        decap = DecapSkill(
+            wc.arm,
+            wc.world,
+            "sample_tube",
+            coords=wc.coords_for("tube_nest"),
+            cap_park=wc.coords_for("cap_park"),
+        )
+        with contextlib.redirect_stdout(io.StringIO()):
+            decap_result = await decap.run()
+        open_state = not tube.capped
+
+        recap = RecapSkill(
+            wc.arm,
+            wc.world,
+            "sample_tube",
+            coords=wc.coords_for("tube_nest"),
+        )
+        with contextlib.redirect_stdout(io.StringIO()):
+            recap_result = await recap.run()
+        closed_state = tube.capped
+        return {
+            "passed": bool(
+                decap_result.ok
+                and open_state
+                and recap_result.ok
+                and closed_state
+            ),
+            "backend": type(wc.backend).__name__,
+            "commands": len(wc.backend.trace),
+            "decap": {
+                "passed": decap_result.ok,
+                "message": decap_result.message,
+                "telemetry": decap_result.data,
+            },
+            "open_world_state": open_state,
+            "recap": {
+                "passed": recap_result.ok,
+                "message": recap_result.message,
+                "telemetry": recap_result.data,
+            },
+            "closed_world_state": closed_state,
+            "claim": "simulated manipulation choreography",
+        }
+
+    return _run(_go())
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 def seam_status() -> dict:
     """Which real repos are importable right now (for the demo header)."""

@@ -1,192 +1,75 @@
-# bay-hack winning strategy
+# Track C winning strategy
 
-## Pick Track A
+## The wedge
 
-The announced challenge is a direct fit for di-omics:
+Most teams can make a robot move. TubeProof proves that the physical task
+actually happened, then recovers when it did not.
 
-**produce TEM-1 beta-lactamase, prove expression, screen inhibitors with
-robotics, read the assay, let round 1 sharpen round 2, and determine dose
-response.**
+The wedge is not generic dexterity. It is one high-value lab capability:
 
-The entry should stay liquid-handling first. Robotic arm motion is useful only
-when it advances this experimental loop.
+> Verified access to closed labware for autonomous liquid handling.
 
-## The winning thesis
+## What judges should remember
 
-> A moving robot is not autonomous science. The loop becomes autonomous only
-> when physical evidence is trustworthy enough to choose the next experiment.
+1. The project solves a real pre-pipetting bottleneck.
+2. The robot does not trust its own command success.
+3. The camera can say `ambiguous` instead of inventing certainty.
+4. A planted partial uncap triggers visible recovery.
+5. The same controller can stop safely when recovery does not work.
+6. The output is a sealed trace of action, evidence, and decision.
 
-bay-hack couples two world models:
+## Priority order
 
-- Zeon's physical world model tracks geometry, labware, robot state, and safe
-  execution.
-- bay-hack's scientific world model tracks expression evidence, assay controls,
-  inhibition, uncertainty, dose response, and the next plate.
+1. One physical open and close sequence
+2. Independent cap-state verification
+3. One reliable failure and recovery
+4. Liquid-handler presentation pose
+5. Matcha dashboard and receipt
+6. Optional dyed-water pipetting beat
 
-The winning moment is not a chart. It is round 2 changing because of round 1
-data, then a confirmed condition causing a visible follow-up decision.
+Do not add a second container type until the first sequence runs cleanly three
+times.
 
-## Why this can beat broader projects
+## Scope cuts
 
-1. **Exact challenge fit:** every announced Track A verb is visible.
-2. **Real liquid handling:** wells, replicates, controls, source positions, and
-   dose factors are concrete.
-3. **Scientific refusal:** failed expression or failed Z-prime blocks learning
-   and the next round.
-4. **Adaptive evidence:** round 1 selects the compounds and doses in round 2.
-5. **Honest provenance:** modeled and measured values cannot be confused.
-6. **Stage reliability:** a sealed receipt can replay the physical result with
-   zero robot motion.
-7. **Strong personal fit:** di-omics already ships PyLabRobot, Physical MCP,
-   lab-automation verification, and autonomous-omics work.
+Cut these first if time gets tight:
 
-## Demo spine
+- learned grasp planning
+- multi-tube sorting
+- general object detection
+- custom end-effector electronics
+- autonomous tool changing
+- wet assay integration
 
-Use the TEM-1 dashboard, one plate, and one real evidence file. Do not tour every
-repository.
+The narrow loop is the product. Generality is an interface claim, not a demo
+requirement.
 
-1. Point to the seven-step pipeline.
-2. Click **Prove expression refusal**.
-3. Say that failed expression caused zero compound reads, model updates, round 2
-   plans, and robot commands after failure.
-4. Run the successful two-round path.
-5. Point to vehicle and no-enzyme controls distributed across the plate.
-6. Point to round 1 Z-prime and measurement provenance.
-7. Show the conservative rank: inhibition minus one standard error.
-8. Show the top measured candidates returning at four dose factors.
-9. Point to the monotonicity gate and relative 50 percent inhibition crossing.
-10. Show the final nomination and SHA-256 sealed receipt.
-11. If hardware is stable, execute or show the matching Zeon workflow.
+## Team roles
 
-## 90-second pitch
+- **Automation lead:** state machine, arm adapter, safety gates
+- **Perception lead:** capped, open, partial, and closed observations
+- **Mechanical lead:** fixture, cap grip, tube anti-rotation
+- **Demo lead:** dashboard, receipt, video, pitch timing
 
-**0:00 to 0:15**
+One person can own multiple roles, but each role needs a named owner.
 
-"Antibiotic resistance is physical, noisy, and expensive. A robot that only
-executes a script cannot tell whether the enzyme was made, whether the assay
-worked, or what experiment should happen next."
+## Judge-facing pitch
 
-**0:15 to 0:32**
+"Liquid handlers are autonomous only after the consumable is accessible. Caps
+and ambiguous physical state still break the workflow. TubeProof opens a tube,
+uses a separate camera observation to prove the cap is off, and only then
+unlocks pipetting. We deliberately planted a partial uncap. The system detected
+it, re-localized, regripped, and recovered. It then recapped the tube and proved
+closure. Every action and observation is sealed in a receipt."
 
-"bay-hack couples two world models. Zeon represents the live bench and safe
-robot execution. My scientific model represents TEM-1 expression, inhibitor
-response, uncertainty, and the next plate."
+## Demo rule
 
-**0:32 to 0:48**
+Show the failure before explaining the architecture. A visible recovery is more
+memorable than a diagram of possible recovery.
 
-Click the refusal.
+## Fallback
 
-"First, the protein signal fails against the no-template control. The system
-refuses the compound screen: zero compound wells, zero model updates, zero round
-2 plans, zero commands after failure. It will not turn background noise into an
-inhibitor claim."
-
-**0:48 to 1:12**
-
-Run the loop.
-
-"Now expression passes. The robot runs replicated candidates with vehicle and
-no-enzyme controls. Kinetic slopes clear the Z-prime gate. Round 1 ranks
-inhibition with uncertainty, then those observations design round 2 across
-four dose factors."
-
-**1:12 to 1:30**
-
-"The final condition is nominated only after round 2 QC, a passing inhibition
-gate, and a monotonic confirmation curve. Every source file and the final
-receipt are hashed. Produce, verify, screen, learn, confirm, act. Two world
-models, one closed scientific loop. I'm Di. I build autonomous labs."
-
-## Priority order at the venue
-
-1. Find the booking system and reserve the earliest expression block.
-2. Get the official protocol and compound map into `run_artifacts/tem1`.
-3. Start the team's one active CFPS batch immediately.
-4. Choose the organizer-approved round 1 policy: 45 compounds in duplicate or
-   90 unique compounds in singlicate.
-5. Confirm TEM-1 expression with real evidence.
-6. Reserve a screen block only after the organizer records the GFP pass.
-7. Export one real kinetic reader file in the shipped schema.
-8. Map one verified plate plan to the venue liquid handler or Zeon workflow.
-9. Complete round 1 with real controls and preserve the analysis.
-10. Generate round 2 from that analysis, not by hand.
-11. Complete one real round 2 confirmation if time permits.
-12. Seal and replay the successful receipt.
-13. Record the physical run immediately.
-14. Freeze before adding extra robotics.
-
-## Success ladder
-
-| Level | Evidence | Demo value |
-|---|---|---|
-| Bronze | Full deterministic two-round TEM-1 simulation | guaranteed coherent story |
-| Silver | Real organizer protocol plus one measured expression or reader file | challenge-specific evidence |
-| Gold | Real robot executes round 1 and real reader data designs round 2 | complete adaptive loop |
-| Win | Gold plus real round 2 confirmation, Zeon simulation-to-physical trace, sealed receipt, crisp pitch | end-to-end world-model science |
-
-## What not to build
-
-- A general chat agent with no assay consequence
-- An agent that computes its own assay numbers instead of calling the shipped
-  deterministic tools
-- A second scientific controller
-- A new robotics framework
-- A custom computer-vision stack before the reader export works
-- A full compound-property predictor with no organizer metadata
-- A wet protocol inferred from papers instead of the event instructions
-- A flourish that makes the deterministic fallback unreliable
-
-## Judge questions
-
-**Where is the world model?**
-
-The scientific state predicts unrun assay conditions from observed response and
-uncertainty, then selects the next physical plate. Zeon models the complementary
-physical state and execution. The second round is generated from the first
-round's observations.
-
-**What is real?**
-
-Say exactly which expression, robot, and reader artifacts are measured. The
-repository simulator is labeled modeled. Never blur them.
-
-**Why kinetic data?**
-
-The analysis estimates per-well reaction slopes. That makes the decision less
-dependent on a single endpoint and exposes control drift before learning.
-
-**Why Z-prime?**
-
-It tests whether the vehicle controls and no-enzyme background are separated
-relative to their variation. A failed screen is quarantined instead of
-becoming model training data.
-
-**How did round 1 sharpen round 2?**
-
-The top conservative scores, mean inhibition minus one standard error, define
-which compounds return. Each returns across four configured dose factors.
-
-**Is the 50 percent number an IC50?**
-
-Until organizer concentrations and a fitted pharmacology model are supplied,
-call it a relative factor estimate for the 50 percent inhibition crossing. Do
-not overclaim it as a definitive IC50.
-
-**What happens after a failure?**
-
-The model does not update, no downstream plan is created, the evidence remains
-visible, and the operator gets a specific recovery target.
-
-**Why Google ADK?**
-
-ADK is the decision interface around eight deterministic file tools. It can
-inspect inputs, gate expression, design plates, analyze kinetics, prove the
-adaptive plate transition, and finalize a measured receipt. It cannot command
-hardware or override a failed result. This preserves a crisp agent story
-without placing an LLM inside the scientific or safety boundary.
-
-**Why not autonomously loop the agent while the plate incubates?**
-
-Physical evidence arrives asynchronously through shared 60-minute bookings and
-a human motion gate. Immutable files are durable state. The agent stops at each
-physical boundary and resumes only when a new measured artifact exists.
+Track A remains fully runnable. If the arm, gripper, or fixture cannot support a
+repeatable physical open and close sequence, demo the highest stable Track C
+rung and keep the TEM-1 closed-loop campaign ready as evidence of the broader
+liquid-handling stack.

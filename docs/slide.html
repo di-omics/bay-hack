@@ -2,104 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>bay-hack · adaptive TEM-1 inhibitor search</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%235cae5a'/%3E%3C/svg%3E">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TubeProof | Track C pitch</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;500;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
-:root{--matcha:#5cae5a;--deep:#3c8446;--ink:#28372a;--muted:#6f8274;--wash:#f2f8f3;--line:#e3eee5;--bad:#b23a2e;--blue:#2f6fd6}
-*{box-sizing:border-box}
-body{margin:0;background:#fff;color:var(--ink);font-family:'Manrope',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
-.slide{min-height:100vh;display:flex;align-items:center;padding:30px 42px;background:radial-gradient(1000px 420px at 100% 0,var(--wash),transparent 70%)}
-.wrap{width:100%;max-width:1180px;margin:auto}
-.top{display:flex;align-items:center;justify-content:space-between;gap:20px}
-.eyebrow{margin:0;color:var(--deep);font-weight:800;font-size:11px;letter-spacing:.18em;text-transform:uppercase}
-.badge{border:1.5px solid var(--matcha);border-radius:999px;padding:8px 14px;color:var(--deep);background:#fff;font-weight:800;font-size:10px;letter-spacing:.09em;text-transform:uppercase}
-h1{margin:16px 0 0;font-weight:800;font-size:clamp(48px,6.6vw,82px);line-height:.98;letter-spacing:-.04em}
-h1 .light{display:block;color:var(--deep);font-weight:200;font-size:.43em;letter-spacing:-.01em;margin-top:9px}
-.promise{max-width:1040px;margin:16px 0 0;color:var(--muted);font-weight:500;font-size:clamp(15px,1.55vw,20px);line-height:1.45}
-.promise b{color:var(--ink);font-weight:800}
-.flow{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin-top:24px}
-.step{position:relative;border:1px solid var(--line);border-top:3px solid var(--matcha);border-radius:11px;padding:10px 9px;background:#fff;min-height:66px}
-.step b{display:block;color:var(--deep);font-size:11px}.step span{display:block;color:var(--muted);font:500 8.5px 'JetBrains Mono',monospace;margin-top:5px}
-.step:not(:last-child):after{content:'→';position:absolute;right:-9px;top:24px;color:var(--matcha);font-weight:800;z-index:2}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-top:20px}
-.card{border:1px solid var(--line);border-left:3px solid var(--matcha);border-radius:12px;padding:15px 17px;background:#fff}
-.card.bad{border-left-color:var(--bad);background:#fff8f6}
-.card .label{color:var(--deep);font:600 9px 'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.07em}.card.bad .label{color:var(--bad)}
-.card h2{font-size:16px;margin:7px 0 5px;letter-spacing:-.02em}.card p{margin:0;color:var(--muted);font-size:12px;line-height:1.42;font-weight:500}
-.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:17px}
-.stat{border:1px solid var(--line);border-radius:11px;background:var(--wash);padding:11px;text-align:center}
-.stat b{display:block;color:var(--deep);font-size:20px;line-height:1}.stat span{display:block;color:var(--muted);font:600 8px 'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.06em;margin-top:5px}
-.bottom{display:flex;align-items:flex-end;justify-content:space-between;gap:22px;margin-top:18px}
-.brand{display:flex;align-items:center;gap:10px;color:var(--ink);font:600 10px 'JetBrains Mono',monospace;letter-spacing:.13em;text-transform:uppercase}
-.vesica{width:52px;height:34px;fill:none;stroke:var(--matcha);stroke-width:1.4}
-.claim{margin:0;color:var(--deep);font-weight:800;font-size:13px}
-.qr{display:flex;align-items:center;gap:10px;color:var(--deep);font:600 9px 'JetBrains Mono',monospace}
-.qr img{width:74px;height:74px;border:1px solid var(--line);border-radius:9px;padding:4px;background:#fff}
-@media(max-height:780px){
-  .slide{align-items:flex-start;padding:18px 36px}.top{margin-top:0}h1{margin-top:8px;font-size:58px}.promise{margin-top:8px;font-size:14px}.flow{margin-top:12px}.grid{margin-top:11px}.card{padding:10px 13px}.card p{font-size:10.5px}.stats{margin-top:9px}.stat{padding:7px}.bottom{margin-top:8px}.qr img{width:58px;height:58px}
-}
-@media(max-width:760px){.flow{grid-template-columns:repeat(2,1fr)}.step:not(:last-child):after{display:none}.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.slide{padding:24px}.bottom{align-items:center}.claim{display:none}}
+:root{--m:#5cae5a;--d:#3c8446;--i:#28372a;--w:#f2f8f3;--l:#e3eee5;--u:#6f8274;--b:#b23a2e;--sans:'Manrope',system-ui,sans-serif;--mono:'JetBrains Mono',monospace}*{box-sizing:border-box}body{margin:0;background:#fff;color:var(--i);font-family:var(--sans)}.slide{width:100vw;height:100vh;min-height:680px;padding:3.2vh 4vw;display:grid;grid-template-rows:auto auto 1fr auto;gap:2.1vh;overflow:hidden}.top{display:flex;justify-content:space-between;align-items:start}.ey{color:var(--d);font-weight:800;font-size:1.05vw;letter-spacing:.18em;text-transform:uppercase}.brand{color:var(--d);font-weight:800;font-size:1.1vw}.hero{display:grid;grid-template-columns:1.35fr .65fr;gap:4vw;align-items:end}h1{font-size:7.3vw;line-height:.82;letter-spacing:-.075em;margin:0;font-weight:800}h1 span{font-weight:200;color:var(--d)}.lead{font-size:1.65vw;line-height:1.35;color:var(--u);margin:1.6vh 0 0;max-width:72vw}.rule{border:2px solid var(--m);border-radius:1.25vw;padding:1.55vw;background:var(--w)}.rule b{color:var(--d);font-size:1.55vw;line-height:1.2;display:block}.rule span{font-size:.95vw;color:var(--u);display:block;margin-top:.6vh}.body{display:grid;grid-template-columns:1.35fr .65fr;gap:1.5vw;min-height:0}.loop{border:1px solid var(--l);border-radius:1.2vw;padding:1.5vw;display:grid;grid-template-rows:auto 1fr auto}.loop h2,.proof h2{margin:0;color:var(--d);font-size:1.3vw}.nodes{display:grid;grid-template-columns:repeat(7,1fr);gap:.55vw;align-items:center}.node{border:1px solid var(--l);border-radius:.8vw;padding:.8vw .62vw;min-height:8.8vh;background:#fff}.node.key{background:var(--w);border:2px solid var(--m)}.node b{display:block;color:var(--d);font-size:.88vw}.node span{display:block;color:var(--u);font:.55vw var(--mono);margin-top:.5vh}.fault{border-left:.4vw solid #d9a72f;background:#fffaf0;padding:.8vw 1vw;border-radius:0 .7vw .7vw 0;font-size:.9vw}.fault b{color:#8d6410}.proof{border:1px solid var(--l);border-radius:1.2vw;padding:1.5vw;display:grid;grid-template-rows:auto 1fr auto}.tubeview{position:relative;background:var(--w);border-radius:.9vw;margin-top:1vh;overflow:hidden}.tube{position:absolute;left:38%;bottom:17%;width:18%;height:45%;border:.25vw solid #7fae84;border-radius:.5vw .5vw 1.3vw 1.3vw;background:#fff}.tube:after{content:'';position:absolute;left:12%;right:12%;bottom:9%;height:34%;background:linear-gradient(#b5dfb8,#6db974);border-radius:.25vw .25vw .8vw .8vw}.cap{position:absolute;left:67%;bottom:19%;width:21%;height:13%;background:repeating-linear-gradient(90deg,var(--d) 0,var(--d) .35vw,var(--m) .35vw,var(--m) .6vw);border-radius:.5vw;transform:rotate(8deg)}.fixture{position:absolute;left:19%;bottom:9%;width:58%;height:11%;background:#dcebdd;border:.18vw solid #a8cfac;border-radius:.7vw}.badge{position:absolute;top:8%;left:7%;background:#fff;color:var(--d);font:.65vw var(--mono);padding:.45vw .6vw;border-radius:99px}.camera{position:absolute;right:8%;top:8%;width:13%;height:12%;background:#fff;border:.18vw solid var(--d);border-radius:.5vw}.camera:after{content:'';position:absolute;width:34%;aspect-ratio:1;border:.2vw solid var(--m);border-radius:50%;left:29%;top:22%}.evidence{display:grid;grid-template-columns:repeat(2,1fr);gap:.6vw;margin-top:.8vh}.ev{background:var(--w);border-radius:.6vw;padding:.6vw}.ev b{display:block;color:var(--d);font-size:.8vw}.ev span{font:.55vw var(--mono);color:var(--u)}.bottom{display:grid;grid-template-columns:repeat(4,1fr) auto;gap:.8vw;align-items:center}.stat{border:1px solid var(--l);border-radius:.8vw;padding:.7vw 1vw}.stat b{display:block;color:var(--d);font-size:1.45vw}.stat span{font:.55vw var(--mono);color:var(--u);text-transform:uppercase}.qr{display:flex;gap:.7vw;align-items:center}.qr img{width:5.5vw;height:5.5vw}.qr span{font:.62vw var(--mono);color:var(--d)}
 </style>
 </head>
-<body>
-<main class="slide">
-<div class="wrap">
-  <div class="top">
-    <p class="eyebrow">24HR AI FOR SCIENCE · ZEON SYSTEMS · TRACK A</p>
-    <span class="badge">liquid handling · ADK tools · adaptive science</span>
-  </div>
-
-  <h1>bay-hack<span class="light">two world models hunt a TEM-1 inhibitor</span></h1>
-  <p class="promise"><b>Zeon models the live physical bench.</b> bay-hack models expression, inhibitor response, uncertainty, and the next experiment. Together they turn trusted round 1 evidence into a physically executable round 2.</p>
-
-  <div class="flow">
-    <div class="step"><b>Synthesize</b><span>cell-free TEM-1</span></div>
-    <div class="step"><b>Confirm</b><span>vs no-template</span></div>
-    <div class="step"><b>Screen</b><span>robotic round 1</span></div>
-    <div class="step"><b>Read</b><span>kinetic slopes</span></div>
-    <div class="step"><b>Verify</b><span>controls + Z-prime</span></div>
-    <div class="step"><b>Adapt</b><span>evidence builds round 2</span></div>
-    <div class="step"><b>Confirm</b><span>dose response or refuse</span></div>
-  </div>
-
-  <div class="grid">
-    <div class="card bad">
-      <div class="label">refuse bad biology</div>
-      <h2>No expression, no screen</h2>
-      <p>Failed TEM-1 expression causes zero compound reads, model updates, round 2 plans, and robot commands after failure.</p>
-    </div>
-    <div class="card">
-      <div class="label">learn from evidence</div>
-      <h2>Round 1 changes round 2</h2>
-      <p>Replicated kinetic inhibition minus one standard error selects the compounds that return across four dose factors.</p>
-    </div>
-    <div class="card">
-      <div class="label">confirm before claiming</div>
-      <h2>QC, curve, then nominate</h2>
-      <p>Controls must clear Z-prime. Round 2 must pass QC, the inhibition gate, and uncertainty-aware monotonicity.</p>
-    </div>
-  </div>
-
-  <div class="stats">
-    <div class="stat"><b>2</b><span>adaptive rounds</span></div>
-    <div class="stat"><b>95</b><span>compound library</span></div>
-    <div class="stat"><b>Z′</b><span>assay gate</span></div>
-    <div class="stat"><b>SHA-256</b><span>sealed receipt</span></div>
-    <div class="stat"><b>0</b><span>commands after refusal</span></div>
-  </div>
-
-  <div class="bottom">
-    <div>
-      <div class="brand"><svg class="vesica" viewBox="0 0 74 48" aria-hidden="true"><circle cx="30" cy="24" r="17"/><circle cx="44" cy="24" r="17"/></svg>DI-OMICS · AUTONOMOUS LABS</div>
-      <p class="claim">Produce · verify · screen · learn · confirm · act</p>
-    </div>
-    <div class="qr"><span>github.com/di-omics/bay-hack</span><img src="qr.svg" alt="QR code to github.com/di-omics/bay-hack"></div>
-  </div>
-</div>
-</main>
-</body>
-</html>
+<body><main class="slide">
+<div class="top"><div class="ey">AI for Science World Models Hack · Track C</div><div class="brand">di-omics / bay-hack</div></div>
+<section class="hero"><div><h1>TUBE<span>PROOF</span></h1><p class="lead">Verified robotic tube access for liquid handling: open, observe, recover, present, reclose.</p></div><div class="rule"><b>No verified opening, no pipetting.</b><span>No verified closure, no completed run.</span></div></section>
+<section class="body"><div class="loop"><h2>Motion is a proposal. Observation earns the next action.</h2><div class="nodes"><div class="node"><b>Observe</b><span>capped?</span></div><div class="node"><b>Localize</b><span>tube + cap</span></div><div class="node"><b>Uncap</b><span>rotate + lift</span></div><div class="node key"><b>Verify open</b><span>camera gate</span></div><div class="node"><b>Present</b><span>pipette pose</span></div><div class="node"><b>Recap</b><span>engage + torque</span></div><div class="node key"><b>Verify closed</b><span>camera gate</span></div></div><div class="fault"><b>Planted fault:</b> partial uncap is observed as ambiguous, so pipetting stays locked while the robot re-localizes, regrips, and retries.</div></div><div class="proof"><h2>Independent physical evidence</h2><div class="tubeview"><span class="badge">OPEN VERIFIED · 98%</span><div class="camera"></div><div class="tube"></div><div class="cap"></div><div class="fixture"></div></div><div class="evidence"><div class="ev"><b>Tube mouth visible</b><span>modeled camera cue</span></div><div class="ev"><b>Cap parked</b><span>modeled camera cue</span></div></div></div></section>
+<section class="bottom"><div class="stat"><b>2</b><span>independent state gates</span></div><div class="stat"><b>5</b><span>planted fault classes</span></div><div class="stat"><b>0</b><span>pipette handoffs on ambiguity</span></div><div class="stat"><b>1</b><span>sealed action + evidence trace</span></div><div class="qr"><img src="qr.svg" alt="Repository QR code"><span>code + live demo<br>di-omics/bay-hack</span></div></section>
+</main></body></html>

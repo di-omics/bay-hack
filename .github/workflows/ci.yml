@@ -13,9 +13,13 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install pytest
-      - name: Sim demo must stay green
+      - name: Track C recovery demo must stay green
+        run: python -m bayhack.track_c_demo --fault partial_uncap --receipt run_artifacts/track-c-recovery.json
+      - name: Track C ambiguity must stop before pipetting
+        run: python -m bayhack.track_c_demo --fault persistent_open_ambiguity --receipt run_artifacts/track-c-stop.json
+      - name: Generic sim fallback must stay green
         run: python -m bayhack.demo
-      - name: TEM-1 Track A demo must stay green
+      - name: TEM-1 Track A fallback must stay green
         run: python -m bayhack.tem1_demo --receipt run_artifacts/tem1-trust.json
       - name: TEM-1 on-site workflow must stay available
         run: python -m bayhack.tem1_cli --help
@@ -32,4 +36,4 @@ jobs:
       - name: Benchmark claims must stay reproducible
         run: python -m bayhack.benchmark
       - name: Compile all Python modules
-        run: python -m compileall -q bayhack tests
+        run: python -m compileall -q bayhack bayhack_adk tests

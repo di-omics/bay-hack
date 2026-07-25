@@ -1,4 +1,7 @@
-# Track A bring kit
+# Track A fallback bring kit
+
+Track C is now primary. Use [TRACK_C_HARDWARE.md](TRACK_C_HARDWARE.md) for the
+current packing list. This file remains as the Track A fallback inventory.
 
 The official Track A guide says the organizers supply and pre-validate the
 reagents, 96-well assay plates, gas-permeable seals, microcentrifuge tubes,

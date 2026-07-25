@@ -2,304 +2,191 @@
 
 [![ci](https://github.com/di-omics/bay-hack/actions/workflows/ci.yml/badge.svg)](https://github.com/di-omics/bay-hack/actions/workflows/ci.yml)
 
-**Two world models hunt a TEM-1 beta-lactamase inhibitor.** Track A entry for
-the 24hr AI for Science World Models Hack at Zeon Systems, July 25 to 26 in San
-Francisco.
+## TubeProof: verified tube access for liquid handling
+
+**Track C entry for the 24hr AI for Science World Models Hack at Zeon
+Systems.** A robot uncaps a tube, independently verifies that the cap is off,
+presents the opening for liquid handling, then recaps and verifies closure.
+Ambiguity triggers recovery or a safe stop.
 
 **[Live site](https://di-omics.github.io/bay-hack/)** ·
 **[Pitch slide](docs/slide.html)** ·
-**[Track A field guide](TEM1_TRACK_A.md)** ·
-**[Official materials](OFFICIAL_TRACK_A_MATERIALS.md)** ·
-**[On-site runbook](ONSITE_RUNBOOK.md)** ·
-**[ADK prep](ADK_PREP.md)** ·
-**[Acceptance gates](ACCEPTANCE.md)** ·
-**[Bring kit](HARDWARE_KIT.md)**
-
-## The challenge-specific loop
+**[Track C build guide](TRACK_C.md)** ·
+**[On-site runbook](TRACK_C_ONSITE.md)** ·
+**[Hardware and labware](TRACK_C_HARDWARE.md)** ·
+**[Coding-agent handoff](KICKOFF_PROMPT.md)**
 
 ```text
-produce TEM-1
-  -> prove expression against a no-template control
-  -> choose a diverse first compound set
-  -> verify and execute a replicated robotic plate plan
-  -> read kinetic slopes
-  -> require control quality and Z-prime
-  -> rank inhibition with uncertainty
-  -> build round 2 from round 1 evidence
-  -> confirm four-point dose response
-  -> nominate or refuse
+observe capped
+  -> localize tube and cap
+  -> grasp and unscrew
+  -> independently verify cap off
+  -> unlock liquid-handler access
+  -> recap
+  -> independently verify closure
+  -> complete, retry, or stop safely
 ```
 
-This is liquid-handling first. Every candidate maps to a source well,
-destination well, concentration factor, and replicate. Controls are distributed
-across the plate. A failed biological or assay-quality gate stops the loop
-before weak evidence can train the model or trigger the next robot action.
+The hard rule is simple:
 
-bay-hack couples two complementary world models:
+> No verified opening, no pipetting. No verified closure, no completed run.
 
-1. **Zeon's physical world model** represents the bench, geometry, labware,
-   robot state, and safe physical execution.
-2. **bay-hack's scientific world model** represents assay response, replicate
-   uncertainty, control quality, dose response, and the next experiment.
+## Run the winning demo
 
-The physical model answers, "Can this action execute safely in the current
-world?" The scientific model answers, "What should we run next, and is the
-evidence trustworthy enough to act on?"
-
-## Run the Track A demo now
-
-The guaranteed path uses only the Python standard library. Every synthetic
-value is explicitly labeled modeled.
+The core uses only the Python standard library. The default scenario injects a
+partial uncap so the robot must detect ambiguity, recover, and finish safely.
 
 ```bash
-python -m bayhack.tem1_demo --receipt run_artifacts/tem1-trust.json
-python -m bayhack.tem1_dashboard
-# open http://127.0.0.1:8010
+python3 -m bayhack.track_c_demo \
+  --fault partial_uncap \
+  --receipt run_artifacts/track-c.json
+
+python3 -m bayhack.track_c_dashboard
+# open http://127.0.0.1:8000
 ```
 
-The dashboard presents two stage-safe paths:
+The dashboard has three stage-safe buttons:
 
-- **Prove expression refusal:** modeled TEM-1 signal fails against the
-  no-template control. The result is zero compound wells, zero model updates,
-  zero round 2 plans, and zero robot commands after failure.
-- **Run two-round screen:** modeled expression passes, round 1 clears its
-  control gate, the highest conservative scores advance, and round 2 estimates
-  dose response before nominating a condition.
+- **Run clean loop:** verifies a nominal open, handoff, and closure.
+- **Inject partial uncap:** catches an uncertain cap state, re-localizes,
+  regrips, retries, and completes with a sealed receipt.
+- **Prove safe stop:** keeps the pipetting handoff locked when camera evidence
+  stays ambiguous after the retry budget.
 
-The deterministic fallback currently reports a modeled expression gate,
-modeled Z-prime above the configured 0.50 threshold in both rounds, replicated
-uncertainty, a monotonic confirmation curve, a relative 50 percent inhibition
-crossing, a sealed round 1 to round 2 plate diff, and a SHA-256 sealed receipt.
-The dashboard shows the two plate maps side by side. These are simulation
-results, not wet-lab claims.
+Every value is labeled. The built-in motion is simulated execution. The
+built-in camera observation is modeled. Receipt replay always issues zero
+hardware commands.
 
-## Build the real event packet
+## Why this maps directly to Track C
 
-```bash
-python -m bayhack.tem1_cli init --output-dir run_artifacts/tem1
-```
-
-The generated assay configuration pre-fills the published sfGFP, nitrocefin,
-A490, and 30-second-cadence facts. Physical execution remains locked until the
-track lead supplies the scaled reaction volumes, total kinetic window,
-compound source wells, and organizer confirmation. The packet also creates
-`hardware-matrix.json` for booking, Zeon object names, pipette units, tip
-policy, reader export shape, and safety ownership.
-
-Then use the file workflow:
-
-```bash
-python -m bayhack.tem1_cli confirm-expression --help
-python -m bayhack.tem1_cli round1-plan --help
-python -m bayhack.tem1_cli analyze --help
-python -m bayhack.tem1_cli round2-plan --help
-python -m bayhack.tem1_cli prove-loop --help
-python -m bayhack.tem1_cli finalize --help
-```
-
-See [TEM1_TRACK_A.md](TEM1_TRACK_A.md) for exact schemas and commands.
-
-## Run the Google ADK decision agent
-
-The updated Track A guide asks teams to arrive with ADK installed and their
-prioritization and analysis exposed as function tools. The core remains
-dependency-free; ADK is an optional coordinator around the same deterministic
-file contract.
-
-```bash
-python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements-adk.txt
-.venv/bin/python -m bayhack_adk.smoke
-cp .env.example .env
-# add GOOGLE_API_KEY locally, then:
-.venv/bin/adk run bayhack_adk
-```
-
-The eight function tools initialize and inspect an event packet, gate
-expression, design and analyze both rounds, seal the plate transition proof,
-and finalize a measured campaign receipt. Tool paths are restricted to
-`BAYHACK_RUN_DIR`. No ADK tool commands hardware or overrides a failed gate.
-
-The contract is:
-
-```text
-results file in -> deterministic decision -> verified plate map out
-```
-
-See [ADK_PREP.md](ADK_PREP.md) for the exact on-site prompts and browser UI
-command.
-
-## Validate the TEM-1 structure packet
-
-```bash
-python scripts/validate_tem1_structures.py
-```
-
-The repository pins RCSB 1XPB as a wild-type receptor reference and 1ERO as an
-inhibitor-bound pocket reference. SHA-256, entry identity, resolution, chain,
-residue count, and six catalytic-site residues are checked locally. These are
-validated experimental references, not prepared docking receptors. Docking
-scores may populate `priority_score` only after a versioned, library-wide
-preparation and scoring run.
-
-See [structures/README.md](structures/README.md).
-
-## Why round 1 genuinely sharpens round 2
-
-- Round 1 uses a complete organizer-approved or agent-generated
-  `priority_score` column when present. Otherwise it uses organizer-supplied
-  numeric features for greedy farthest-point diversity, then falls back to
-  deterministic library coverage.
-- The default one-plate design uses 45 compounds in duplicate plus six
-  controls. If the track lead approves a breadth-first primary screen, one
-  configured switch fits 90 unique compounds plus six controls while preserving
-  replicated round 2 confirmation.
-- Kinetic slopes are normalized to vehicle and no-enzyme controls.
-- Vehicle and no-enzyme separation must clear the configured Z-prime threshold
-  before the scientific model updates.
-- Candidate ranking uses mean inhibition minus one standard error.
-- The top observed candidates return across four organizer-configured dose
-  factors.
-- A sealed transition artifact proves that the selected compounds, doses, and
-  round 2 wells match the accepted round 1 ranking.
-- Final nomination requires round 2 QC, a passing condition, and an
-  uncertainty-tolerant monotonic curve.
-
-The built-in 50 percent crossing is a relative dose-factor estimate. It is not
-a definitive IC50 until real concentrations and sufficient fitted data support
-that claim.
-
-This is adaptive experimental design with a physical consequence, not an LLM
-choosing labels in a dashboard.
-
-## Fail closed, visibly
-
-| Gate | Failure consequence |
+| Track C direction | TubeProof evidence |
 |---|---|
-| TEM-1 expression vs no-template control | compound screen blocked |
-| Organizer protocol incomplete | physical execution blocked |
-| Compound source well missing | physical execution blocked |
-| Plan invalid | zero backend dispatch |
-| Reader export incomplete | analysis blocked |
-| Control quality or Z-prime fails | data quarantined, no model update |
-| Round 1 QC fails | round 2 planning blocked |
-| Round 2 plate does not match round 1 ranking | loop proof blocked |
-| Round 2 QC fails | dose-response claim blocked |
-| Confirmation fails | final nomination blocked |
-| Receipt digest fails | stage replay blocked |
+| Open and close containers | threaded tube decap and recap choreography |
+| Physical verification | separate cap-state observations gate each transition |
+| Recover from failures | cap slip, tube rotation, partial uncap, and ambiguous closure |
+| Build useful lab capability | tube opening is presented to a liquid handler |
+| Self-aligning fixtures | configurable split-collar nest with cap parking pocket |
+| Transparent or reflective objects | confidence threshold and explicit ambiguity state |
 
-## What counts as evidence
+The demo is deliberately narrow. It proves one lab capability end to end
+instead of showing many unverified motions.
 
-- **modeled:** generated by the deterministic TEM-1 or generic assay simulator
-- **simulated execution:** orchestration code exercised against a simulator
-- **measured:** loaded from a physical reader, camera, or approved evidence file
-- **hardware-validated:** measured evidence that also clears the physical gates
+## Physical state is evidence, not an internal flag
 
-No modeled value may be described as measured. Source CSV files are tied to
-analysis records by SHA-256 digest. `tem1_cli finalize` recomputes expression,
-both analyses, and the adaptive plate transition from the raw fixed files
-before sealing the complete Track A receipt. Safe replay issues zero hardware
-commands.
+Motion and observation use separate interfaces:
+
+```python
+class TubeActuator:
+    def localize(self): ...
+    def grasp_cap(self): ...
+    def uncap(self): ...
+    def present_for_pipetting(self): ...
+    def recap(self): ...
+
+class CapVerifier:
+    def observe(self, checkpoint): ...
+```
+
+The controller accepts `capped`, `uncapped`, or `ambiguous`, plus confidence,
+provenance, and evidence. `EvidenceFileCapVerifier` consumes the same contract
+from a camera process without importing a vision stack into the safety core.
+
+Example camera evidence:
+
+```json
+{
+  "observations": [
+    {
+      "checkpoint": "open",
+      "state": "uncapped",
+      "confidence": 0.96,
+      "provenance": "measured:camera",
+      "evidence": {"image_sha256": "..."}
+    }
+  ]
+}
+```
+
+## Compose the shipped di-omics arm stack
+
+`plr-lab-robot` already contains real simulation-first `DecapSkill` and
+`RecapSkill` choreography. bay-hack adds the independent physical-verification
+and recovery layer around those skills.
+
+```bash
+pip install -e ../plr-lab-robot
+python3 - <<'PY'
+from bayhack.seams import tube_access_checkpoint
+print(tube_access_checkpoint())
+PY
+```
+
+The adapter runs cap rotation and thread-pitch lift through the real
+`plr-lab-robot` simulation backend. At the venue, use the organizer's supported
+arm SDK or Zeon project. Do not invent an arm API. Keep the swap behind the
+`TubeActuator` boundary and prove it in simulation before unlocking motion.
+
+## Print the fixture after measuring the venue tube
+
+[`hardware/tube_nest.scad`](hardware/tube_nest.scad) is a configurable
+split-collar nest. It has a funnel entry, an anti-rotation split, mounting holes,
+and a visible cap parking pocket. Measure the exact tube outer diameter first.
+Print a short fit coupon before committing printer time to the full fixture.
 
 ## Zero-motion readiness audit
 
 ```bash
-python -m bayhack.preflight --output run_artifacts/preflight.json
+python3 -m bayhack.preflight --output run_artifacts/preflight.json
 pytest -q
 ```
 
-Preflight checks the new TEM-1 path, the generic liquid-handling fallback,
-unsafe-plan refusal, benchmark claims, optional repository seams, evidence
-files, and safe replay without initializing venue hardware.
+Preflight proves both Track C outcomes:
 
-## The generic liquid-handling fallback
+1. A partial uncap is detected, recovered, and reclosed.
+2. Persistent visual ambiguity blocks the liquid-handling handoff.
 
-The original two-component formulation loop remains intact as a backup:
+It also exercises the original generic liquid-handling loop and the complete
+Track A TEM-1 build as fallbacks. It never initializes venue hardware.
+
+## Track A remains available as a fallback
+
+The TEM-1 closed-loop inhibitor campaign is preserved. Nothing was deleted.
 
 ```bash
-python -m bayhack.demo --ledger run_artifacts/trust.json
-python -m bayhack.dashboard
-python -m bayhack.safety --output run_artifacts/refusal.json
-python -m bayhack.benchmark
+python3 -m bayhack.tem1_demo --receipt run_artifacts/tem1.json
+python3 -m bayhack.tem1_dashboard
 ```
 
-That simulator runs six visible 40 uL formulations, compared with a declared
-26-point grid baseline. The modeled benchmark averages about six runs and saves
-about 800 uL and 40 tips in the search phase. Its accepted well moves to H12 as
-a verified follow-up. It is a demo fallback, not the announced biological
-challenge.
+See [TEM1_TRACK_A.md](TEM1_TRACK_A.md),
+[OFFICIAL_TRACK_A_MATERIALS.md](OFFICIAL_TRACK_A_MATERIALS.md), and
+[ADK_PREP.md](ADK_PREP.md). Track A remains useful if the assigned hardware or
+team makes the biological screen more practical than dexterity.
 
-## The di-omics composition
+## Evidence vocabulary
 
-The standard-library path always works. Lazy adapters can swap in the existing
-di-omics stack when local repositories are present:
+- **modeled:** generated by a deterministic scientific or sensor model
+- **simulated execution:** action code exercised against a simulator
+- **measured:** loaded from a physical camera, sensor, or reader
+- **hardware-validated:** measured evidence that clears the physical gates
 
-| Stage | Repository or adapter |
-|---|---|
-| Scientific design | `ml-bio-eval/lab-world-model` |
-| Liquid handling and reader | `plr-mcp` |
-| Protocol compiler | `plr-epigenome` |
-| Volume qualification | `plr-epigenome` |
-| Dexterity and labware motion | `plr-lab-robot` |
-| Zeon physical world | `bayhack/zeon_bridge.py` |
-| Track A assay model | `bayhack/tem1.py` |
+No modeled value may be described as measured. No simulated motion may be
+described as physical execution.
 
-Preflight supports both a sibling layout and the categorized di-omics project
-layout. Every path is derived from the current repository root:
+## Public project map
 
-```text
-../plr-mcp
-../plr-epigenome
-../plr-lab-robot
-../ml-bio-eval/lab-world-model
+- [`bayhack/track_c.py`](bayhack/track_c.py): state machine, gates, recovery, receipts
+- [`bayhack/track_c_demo.py`](bayhack/track_c_demo.py): narrated CLI demo
+- [`bayhack/track_c_dashboard.py`](bayhack/track_c_dashboard.py): local stage UI
+- [`hardware/tube_nest.scad`](hardware/tube_nest.scad): configurable fixture
+- [`bayhack/seams.py`](bayhack/seams.py): `plr-lab-robot` and other di-omics seams
+- [`TRACK_C.md`](TRACK_C.md): architecture and camera contract
+- [`TRACK_C_ONSITE.md`](TRACK_C_ONSITE.md): venue integration and demo freeze
+- [`TRACK_C_HARDWARE.md`](TRACK_C_HARDWARE.md): what to bring and measure
+- [`STRATEGY.md`](STRATEGY.md): scoring strategy and pitch
+- [`HOUSE_RULES.md`](HOUSE_RULES.md): authorship, evidence, and Git rules
 
-../../lab-automation/plr-mcp
-../../lab-automation/plr-epigenome
-../../lab-automation/plr-lab-robot
-../../research-and-ml/ml-bio-eval/lab-world-model
-```
+## Reference
 
-Preflight discovers and verifies each path before use. The adapters import the
-installed packages lazily. Missing optional repositories do not break the Track
-A simulator.
+- [Official Track C challenge](https://app.notion.com/p/Track-C-Open-Build-for-Dexterity-and-Physical-Verification-3a5ee7a4c457805a8e19f18a2669f670?pvs=25)
 
-## Zeon bridge
-
-`bayhack/zeon_bridge.py::ZeonArmBackend` is the dependency-free PyLabRobot
-simulation seam, not a guessed Zeon SDK. The physical implementation belongs
-inside the organizer's native Zeon project as Python skills and a workflow.
-Translate only a verified bay-hack plate plan, use object anchors rather than
-hard-coded coordinates, and run the exact workflow in simulation before a
-human unlocks physical motion. See
-[ZEON_NATIVE_INTEGRATION.md](ZEON_NATIVE_INTEGRATION.md).
-
-Zeon's public stack describes a live digital twin that represents geometry,
-physical state, and scientific state for workflow execution. bay-hack adds a
-challenge-specific scientific decision layer that turns trusted assay evidence
-into the next plate.
-
-## Supporting documents
-
-- [TEM1_TRACK_A.md](TEM1_TRACK_A.md): exact challenge workflow and CSV schemas
-- [OFFICIAL_TRACK_A_MATERIALS.md](OFFICIAL_TRACK_A_MATERIALS.md): organizer guide, Sepia protocol, and Zeon documentation review
-- [ZEON_NATIVE_INTEGRATION.md](ZEON_NATIVE_INTEGRATION.md): native Zeon skill and workflow handoff
-- [ADK_PREP.md](ADK_PREP.md): optional decision agent, function tools, and exact run commands
-- [structures/README.md](structures/README.md): validated TEM-1 references and docking-prep contract
-- [STRATEGY.md](STRATEGY.md): win condition, pitch, and priority order
-- [ONSITE_RUNBOOK.md](ONSITE_RUNBOOK.md): hour-by-hour build and demo freeze
-- [ACCEPTANCE.md](ACCEPTANCE.md): evidence and refusal contract
-- [HARDWARE_KIT.md](HARDWARE_KIT.md): what to bring and what not to bring
-- [MEASUREMENT_ADAPTERS.md](MEASUREMENT_ADAPTERS.md): generic reader and camera adapters
-- [VERIFICATION_ADAPTERS.md](VERIFICATION_ADAPTERS.md): physical volume and vision gates
-- [KICKOFF_PROMPT.md](KICKOFF_PROMPT.md): precise coding-agent handoff
-- [HOUSE_RULES.md](HOUSE_RULES.md): authorship, writing, evidence, and Git rules
-
-## References
-
-- [Official Track A challenge](https://luma.com/avi3l01q)
-- [Inside the Zeon stack](https://www.zeonsystems.ai/blog/inside-the-zeon-stack)
-- [Original Z-prime assay-quality paper](https://pubmed.ncbi.nlm.nih.gov/10838414/)
-- [Cell-free synthesis and characterization of TEM-1 beta-lactamase](https://www.sciencedirect.com/science/article/pii/S0168165622000025)
-
-Authorship and evidence rules are locked in [HOUSE_RULES.md](HOUSE_RULES.md).
-MIT licensed.
+Authored as `di-omics`. MIT licensed.

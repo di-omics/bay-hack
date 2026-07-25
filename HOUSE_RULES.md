@@ -18,6 +18,11 @@
 ## Engineering
 
 - Keep `python -m bayhack.demo` dependency-free and green.
+- Keep `python3 -m bayhack.track_c_demo` dependency-free and green.
+- Never unlock pipetting without an independent cap-off observation.
+- Never call a tube-access run complete without independent closure evidence.
+- Treat ambiguous physical state as a retry or a safe stop.
+- Keep every Track C motion, observation, recovery, and decision in the receipt.
 - Verify every physical plan before execution.
 - Gate seed experiments exactly like optimization experiments.
 - Never train the world model on an untrusted measurement.
@@ -32,4 +37,3 @@
 - Keep commits small enough to review and revert.
 - Do not rewrite public history unless `di-omics` explicitly requests it.
 - Do not modify the GitHub profile repository or avatar from this project.
-

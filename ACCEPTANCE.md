@@ -1,5 +1,9 @@
 # Acceptance criteria: evidence before autonomy
 
+Track C is now primary. Its acceptance gates are in
+[TRACK_C.md](TRACK_C.md). This file preserves the complete Track A evidence
+contract as a fallback.
+
 The Track A claim is valid only if each biological, physical, and statistical
 gate earns the next action.
 

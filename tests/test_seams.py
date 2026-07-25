@@ -86,6 +86,15 @@ def test_dexterity_checkpoint_moves_plate():
     assert r["passed"] and r["commands"] > 0
 
 
+def test_tube_access_checkpoint_runs_decap_and_recap():
+    pytest.importorskip("plr_lr")
+    from bayhack.seams import tube_access_checkpoint
+    r = tube_access_checkpoint()
+    assert r["passed"] and r["commands"] > 0
+    assert r["decap"]["passed"] and r["open_world_state"]
+    assert r["recap"]["passed"] and r["closed_world_state"]
+
+
 def test_zeon_backend_is_real_scara_and_swap_runs():
     pytest.importorskip("plr_lr")
     from bayhack.zeon_bridge import ZeonArmBackend, zeon_swap_selfcheck

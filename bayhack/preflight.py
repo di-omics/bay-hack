@@ -27,6 +27,7 @@ from .measurements import (
 from .safety import run_refusal
 from .structure import validate_manifest
 from .tem1 import run_simulated_closed_loop, verify_receipt_integrity
+from .track_c import run_simulated_tube_access, verify_track_c_receipt
 from .verification import CsvVolumeGate, JsonCvCheckpoint
 
 
@@ -124,10 +125,15 @@ def run_preflight(
         "MEASUREMENT_ADAPTERS.md",
         "VERIFICATION_ADAPTERS.md",
         "ONSITE_RUNBOOK.md",
+        "TRACK_C.md",
+        "TRACK_C_ONSITE.md",
+        "TRACK_C_HARDWARE.md",
         "bayhack/assay.py",
         "bayhack/loop.py",
         "bayhack/safety.py",
         "bayhack/tem1.py",
+        "bayhack/track_c.py",
+        "bayhack/track_c_dashboard.py",
         "bayhack/structure.py",
         "bayhack/verification.py",
         "bayhack_adk/agent.py",
@@ -136,6 +142,7 @@ def run_preflight(
         "structures/manifest.json",
         "structures/1XPB.pdb",
         "structures/1ERO.pdb",
+        "hardware/tube_nest.scad",
     )
     missing = [name for name in required_files if not (ROOT / name).exists()]
     checks.append(PreflightCheck(
@@ -189,6 +196,44 @@ def run_preflight(
         ))
     except Exception as exc:
         checks.append(PreflightCheck("simulation-fallback", "FAIL", str(exc)))
+
+    try:
+        recovered = run_simulated_tube_access("partial_uncap")
+        refused = run_simulated_tube_access("persistent_open_ambiguity")
+        track_c_ok = bool(
+            recovered["status"] == "VERIFIED_COMPLETE"
+            and recovered["recoveries"] >= 1
+            and recovered["gates"]["open_verified"]
+            and recovered["gates"]["pipetting_allowed"]
+            and recovered["gates"]["closed_verified"]
+            and verify_track_c_receipt(recovered)
+            and refused["status"] == "STOPPED_SAFE"
+            and not refused["gates"]["pipetting_allowed"]
+            and refused["execution"]["physical_hardware_commands"] == 0
+            and verify_track_c_receipt(refused)
+        )
+        checks.append(PreflightCheck(
+            "track-c-verified-access",
+            "PASS" if track_c_ok else "FAIL",
+            "partial uncap recovered; persistent ambiguity stopped before pipetting",
+            {
+                "capability": recovered["capability"],
+                "recovery_scenario": recovered["status"],
+                "recoveries": recovered["recoveries"],
+                "open_verified": recovered["gates"]["open_verified"],
+                "closed_verified": recovered["gates"]["closed_verified"],
+                "refusal_scenario": refused["status"],
+                "refusal_pipetting_allowed": refused["gates"]["pipetting_allowed"],
+                "receipt_sha256": recovered["integrity"]["digest"],
+                "provenance": "simulated execution and modeled camera",
+            },
+        ))
+    except Exception as exc:
+        checks.append(PreflightCheck(
+            "track-c-verified-access",
+            "FAIL",
+            str(exc),
+        ))
 
     try:
         benchmark = run_benchmark(seeds=range(1, 11))
@@ -437,6 +482,7 @@ def run_preflight(
         "repository-contract",
         "pre-act-refusal",
         "simulation-fallback",
+        "track-c-verified-access",
         "benchmark",
         "tem1-track-a-fallback",
         "tem1-structure-packet",

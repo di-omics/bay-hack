@@ -29,37 +29,33 @@ def test_no_em_dashes_in_public_project_text():
     assert not violations, f"em dash found in: {violations}"
 
 
-def test_public_story_is_tem1_liquid_handling_first_and_complementary():
+def test_public_story_is_track_c_verified_tube_access_first():
     readme = (ROOT / "README.md").read_text()
     site = (ROOT / "docs" / "index.html").read_text()
     for phrase in (
-        "TEM-1 beta-lactamase",
-        "Zeon's physical world model",
-        "scientific world model",
-        "confirm expression",
-        "Z-prime",
-        "round 2",
-        "dose response",
+        "TubeProof",
+        "Track C",
+        "verified tube access",
+        "independent physical",
+        "partial uncap",
+        "No verified opening, no pipetting",
+        "No verified closure",
+        "liquid handling",
     ):
         assert phrase.lower() in (readme + site).lower()
-    assert "trust layer a vision-first stack still needs" not in site.lower()
-    assert "Prove expression refusal" in readme
+    assert "Track A remains available as a fallback" in readme
     assert "TEM1_TRACK_A.md" in readme
-    assert "python -m bayhack.tem1_demo" in readme
-    assert "python -m bayhack.tem1_dashboard" in readme
-    assert "python -m bayhack.preflight" in readme
+    assert "python3 -m bayhack.track_c_demo" in readme
+    assert "python3 -m bayhack.track_c_dashboard" in readme
+    assert "python3 -m bayhack.preflight" in readme
     assert "No modeled value may be described as measured" in readme
-    assert "definitive IC50" in readme
 
 
-def test_pitch_numbers_match_the_benchmark():
+def test_generic_fallback_benchmark_remains_green():
     result = run_benchmark(seeds=range(1, 11))
-    readme = (ROOT / "README.md").read_text()
     assert result["avg_runs"] == 6.0
     assert result["reaction_volume_saved_ul"] == 800.0
     assert result["tips_saved"] == 40.0
-    assert "800 uL" in readme
-    assert "40 tips" in readme
 
 
 def test_projector_slide_has_real_repo_qr():
