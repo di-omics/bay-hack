@@ -1,4 +1,4 @@
-# 🧪🤖 bay-hack
+# bay-hack
 
 [![ci](https://github.com/di-omics/bay-hack/actions/workflows/ci.yml/badge.svg)](https://github.com/di-omics/bay-hack/actions/workflows/ci.yml)
 
@@ -9,11 +9,11 @@ Systems.** A robot uncaps a tube, independently verifies that the cap is off,
 presents the opening for liquid handling, then recaps and verifies closure.
 Ambiguity triggers recovery or a safe stop.
 
-**[Live site](https://di-omics.github.io/bay-hack/)** ·
-**[Pitch slide](docs/slide.html)** ·
-**[Track C build guide](TRACK_C.md)** ·
-**[On-site runbook](TRACK_C_ONSITE.md)** ·
-**[Hardware and labware](TRACK_C_HARDWARE.md)** ·
+**[Live site](https://di-omics.github.io/bay-hack/)** /
+**[Pitch slide](docs/slide.html)** /
+**[Track C build guide](TRACK_C.md)** /
+**[On-site runbook](TRACK_C_ONSITE.md)** /
+**[Hardware and labware](TRACK_C_HARDWARE.md)** /
 **[Coding-agent handoff](KICKOFF_PROMPT.md)**
 
 ```text
@@ -31,7 +31,7 @@ The hard rule is simple:
 
 > No verified opening, no pipetting. No verified closure, no completed run.
 
-## Run the winning demo
+## Run the demo
 
 The core uses only the Python standard library. The default scenario injects a
 partial uncap so the robot must detect ambiguity, recover, and finish safely.
